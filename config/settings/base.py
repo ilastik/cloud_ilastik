@@ -43,9 +43,13 @@ LOCALE_PATHS = [ROOT_DIR.path("locale")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
 DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgres:///cloud_ilastik")
+    #"default": env.db("DATABASE_URL", default="postgres:///cloud_ilastik")
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'cloud_ilastik_db',
+    }
 }
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+#DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 # URLS
 # ------------------------------------------------------------------------------
@@ -77,6 +81,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "cloud_ilastik.users.apps.UsersConfig",
+    "cloud_ilastik.hbp_oauth2",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -280,7 +285,7 @@ ACCOUNT_AUTHENTICATION_METHOD = "username"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_ADAPTER = "cloud_ilastik.users.adapters.AccountAdapter"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
@@ -289,3 +294,8 @@ SOCIALACCOUNT_ADAPTER = "cloud_ilastik.users.adapters.SocialAccountAdapter"
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+SOCIALACCOUNT_PROVIDERS = {
+    "hbp_oauth2": {
+        "SCOPE": ["openid", "profile"],
+    },
+}
