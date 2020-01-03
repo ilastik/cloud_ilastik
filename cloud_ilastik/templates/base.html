@@ -22,6 +22,7 @@
     
 
     <!-- Your stuff: Third-party CSS libraries go here -->
+    <link href="{% static 'fonts/fontawesome/css/all.css' %}" rel="stylesheet">
     
     <!-- This file stores project-specific CSS -->
     
@@ -55,12 +56,15 @@
               {# URL provided by django-allauth/account/urls.py #}
               <a class="nav-item nav-link" href="{% url 'users:detail' request.user.username  %}">{% trans "My Profile" %}</a>
               {# URL provided by django-allauth/account/urls.py #}
-              <a class="nav-item nav-link" href="{% url 'account_logout' %}">{% trans "Sign Out" %}</a>
+              <a class="nav-item nav-link" href="{% url 'account_logout' %}">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="sr-only">{% trans "Log Out" %}</span>
+              </a>
             {% else %}
               {# URL provided by django-allauth/account/urls.py #}
               <a id="log-in-link" class="nav-item nav-link" href="{% url 'hbp_oauth2_login' %}">
-                <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
-                <span {# class="sr-only" #}>{% trans "Log In" %}</span>
+                <i class="fas fa-sign-in-alt"></i>
+                <span class="sr-only">{% trans "Log In" %}</span>
               </a>
             {% endif %}
           </nav>

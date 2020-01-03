@@ -29,11 +29,9 @@ class HBPOAuth2Provider(OAuth2Provider):
         return data['sub']
 
     def extract_common_fields(self, data):
-        res = dict(email=data.get("email"),
+        return dict(email=data.get("email"),
                     username=data.get("preferred_username"),
                     name=data.get("name"))
-        print(res)
-        return res
 
 
 provider_classes = [HBPOAuth2Provider]
