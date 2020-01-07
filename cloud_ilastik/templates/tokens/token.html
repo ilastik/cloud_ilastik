@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Application tokens" %}{% endblock %}
+
+{% block content %}
+<h2>Your ilastik token: <span id="token">{{ token }}</span></h2>
+{% endblock %}

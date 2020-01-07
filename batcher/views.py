@@ -1,9 +1,10 @@
-from rest_framework import viewsets, response, parsers
+from rest_framework import viewsets, response, parsers, permissions
 from . import models, serializers
 
 
 class FileViewset(viewsets.ViewSet):
     parser_classes = [parsers.FileUploadParser]
+    permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request):
         file_obj = request.data["file"]

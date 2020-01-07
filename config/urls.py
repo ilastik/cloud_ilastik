@@ -14,6 +14,7 @@ urlpatterns = [
     path("users/", include("cloud_ilastik.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     path("batch/", include("batcher.urls")),
+    path("tokens/", include("tokens.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
