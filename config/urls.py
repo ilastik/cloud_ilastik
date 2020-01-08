@@ -15,6 +15,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("tokens/", include("tokens.urls")),
     path("v1/files/", include("files.api_urls")),
+    path("v1/batch/", include("batch.api_urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

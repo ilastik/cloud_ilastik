@@ -9,4 +9,4 @@ __all__ = ["FileSerializer"]
 class FileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.File
-        fields = ["id", "name", "data"]
+        fields = ["id", "url", "name", "data"]
