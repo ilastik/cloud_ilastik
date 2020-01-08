@@ -8,7 +8,7 @@ class FileViewset(viewsets.ViewSet):
 
     def create(self, request):
         file_obj = request.data["file"]
-        file = models.File.objects.create(name=file_obj.name, data=file_obj)
+        file = models.File.objects.create(name=file_obj.name, data=file_obj, owner=request.user)
         serializer = serializers.FileSerializer(file)
         return response.Response(serializer.data)
 
