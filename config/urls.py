@@ -12,6 +12,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     # User management
     path("users/", include("cloud_ilastik.users.urls", namespace="users")),
+    path("datasets/", include("cloud_ilastik.datasets.urls", namespace="datasets")),
     path("accounts/", include("allauth.urls")),
     path("token/", include("tokens.urls")),
     path("v1/files/", include("files.api_urls")),

@@ -74,7 +74,14 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
 ]
 
-LOCAL_APPS = ["cloud_ilastik.users.apps.UsersConfig", "cloud_ilastik.hbp_oauth2", "files", "tokens", "batch"]
+LOCAL_APPS = [
+    "cloud_ilastik.users.apps.UsersConfig",
+    "cloud_ilastik.hbp_oauth2",
+    "cloud_ilastik.datasets",
+    "files",
+    "tokens",
+    "batch",
+]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = LOCAL_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
