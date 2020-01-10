@@ -24,6 +24,17 @@ Moved to settings_.
 Basic Commands
 --------------
 
+Setting Up Developement Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* To setup a dev environment, use this command
+
+    $ make setup_dev
+
+This will create superuser ilastik:ilastik
+
+To enable HBP login run following command:
+    $ python manage.py register_hbp_client <client_id> <client_secret>
+
 Setting Up Your Users
 ^^^^^^^^^^^^^^^^^^^^^
 

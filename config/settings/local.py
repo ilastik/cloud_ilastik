@@ -10,6 +10,8 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="SNpC3T6QbkxIa9WtC6s3s6iiknIkLYWAO
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
 
+DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "temp.db"}}
+
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches

@@ -76,7 +76,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = ["cloud_ilastik.users.apps.UsersConfig", "cloud_ilastik.hbp_oauth2", "files", "tokens", "batch"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = LOCAL_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
 # MIGRATIONS
 # ------------------------------------------------------------------------------
@@ -251,4 +251,4 @@ SOCIALACCOUNT_ADAPTER = "cloud_ilastik.users.adapters.SocialAccountAdapter"
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-SOCIALACCOUNT_PROVIDERS = {"hbp_oauth2": {"SCOPE": ["openid", "profile"]}}
+SOCIALACCOUNT_PROVIDERS = {"hbp_oauth2": {"SCOPE": ["offline_access", "profile"]}}
