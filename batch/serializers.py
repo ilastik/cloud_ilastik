@@ -7,6 +7,8 @@ __all__ = ["ProjectSerializer"]
 
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
+    html_url = serializers.HyperlinkedIdentityField("batch:project-detail")
+
     class Meta:
         model = models.Project
-        fields = ["id", "file", "num_dimensions"]
+        fields = ["id", "html_url", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
