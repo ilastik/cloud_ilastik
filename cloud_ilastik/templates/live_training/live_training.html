@@ -20,7 +20,7 @@
             data.map((e, idx) => {
                 rowsHTML += `<tr>
                   <th scope="row">${idx + 1}</th>
-                  <td><a href="#">${e.name}</a></td>
+                  <td><a href="${e.url}">${e.name}</a></td>
                 </tr>`;
             });
             return `<table class="table table-striped">
