@@ -13,6 +13,7 @@
 <script type="text/javascript">
     (function() {
         const datasetEl = document.getElementById("liveTrainingDatasets");
+        const API_URL = new URL("datasets", "{{TRAINING_API_URL}}");
 
         function renderTable(data) {
             let rowsHTML = "";
@@ -66,7 +67,7 @@
               });
         };
 
-        fetchDatasets('{{TRAINING_API_URL}}/datasets');
+        fetchDatasets(API_URL.href);
     })();
 
 </script>
