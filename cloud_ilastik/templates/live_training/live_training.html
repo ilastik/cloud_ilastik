@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Application tokens" %}{% endblock %}
+
+{% block content %}
+<div id="liveTrainingDatasets" ></div>
+{% endblock %}
+
+{% block javascript %}
+{{block.super}}
+<script type="text/javascript">
+    (function() {
+        const datasetEl = document.getElementById("liveTrainingDatasets");
+        const API_URL = new URL("datasets", "{{TRAINING_API_URL}}");
+
+        function renderTable(data) {
+            let rowsHTML = "";
+            data.map((e, idx) => {
+                rowsHTML += `<tr>
+                  <th scope="row">${idx + 1}</th>
+                  <td><a href="${e.url}">${e.name}</a></td>
+                </tr>`;
+            });
+            return `<table class="table table-striped">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHTML}
+              </tbody>
+            </table>`;
+        }
+
+        function fetchDatasets(url) {
+            fetch(url)
+              .then((response) => {
+                return response.json();
+              })
+              .then((result) => {
+                datasetEl.innerHTML = renderTable(result);
+              })
+              .catch(function(err) {
+                  console.debug(err);
+
+                  const retryLinkEl = document.createElement("a");
+                  retryLinkEl.innerText = "Retry.";
+                  retryLinkEl.className = "alert-link";
+                  retryLinkEl.href = "#";
+                  retryLinkEl.addEventListener("click", (e) => {
+                      e.preventDefault();
+                      fetchDatasets(url);
+                      return false;
+                  });
+
+                  const alertEl = document.createElement("div");
+                  alertEl.appendChild(document.createTextNode("Error while fetching dataset list. "));
+                  alertEl.appendChild(retryLinkEl);
+                  alertEl.className = "alert alert-danger";
+
+                  datasetEl.innerHTML = "";
+                  datasetEl.appendChild(alertEl);
+              });
+        };
+
+        fetchDatasets(API_URL.href);
+    })();
+
+</script>
+
+{% endblock javascript %}

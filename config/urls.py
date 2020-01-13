@@ -14,6 +14,7 @@ urlpatterns = [
     path("users/", include("cloud_ilastik.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     path("token/", include("tokens.urls")),
+    path("live_training/", include("live_training.urls")),
     path("v1/files/", include("files.api_urls")),
     path("v1/batch/", include("batch.api_urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

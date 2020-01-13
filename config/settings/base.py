@@ -252,3 +252,4 @@ SOCIALACCOUNT_ADAPTER = "cloud_ilastik.users.adapters.SocialAccountAdapter"
 # Your stuff...
 # ------------------------------------------------------------------------------
 SOCIALACCOUNT_PROVIDERS = {"hbp_oauth2": {"SCOPE": ["offline_access", "profile"]}}
+TRAINING_API_URL = "http://web.ilastik.org/training/api/"
