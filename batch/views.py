@@ -1,7 +1,30 @@
+from django.views import generic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, response, permissions, generics
 
 from . import serializers, models
+from cloud_ilastik.datasets import models as datasets_models
+
+
+class ProjectListView(generic.ListView):
+    def get_queryset(self):
+        return models.Project.objects.filter(file__owner_id=self.request.user.id)
+
+
+class ProjectDetailView(generic.DetailView):
+    model = models.Project
+
+    @property
+    def _compatible_datasets(self):
+        return datasets_models.Dataset.objects.filter(
+            size_z__gte=self.object.min_block_size_z,
+            size_y__gte=self.object.min_block_size_y,
+            size_x__gte=self.object.min_block_size_x,
+            size_c=self.object.num_channels,
+        )
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(dataset_list=self._compatible_datasets, **kwargs)
 
 
 class ProjectViewset(viewsets.ViewSet):

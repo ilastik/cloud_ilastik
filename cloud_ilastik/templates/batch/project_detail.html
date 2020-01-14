@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Project {{ object.name }}{% endblock %}
+
+{% block content %}
+  <h2>Project {{ object.name }}</h2>
+
+  <h2>Datasets</h2>
+  <ul>
+    {% for dataset in dataset_list %}
+      <li>{{ dataset.name }}</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
