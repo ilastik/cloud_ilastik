@@ -18,19 +18,19 @@ set -u; set -x
     ILASTIK_RESULT="$?"
 
     if [ $ILASTIK_RESULT = 0 ]; then
-        srun -ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10  ${OUT_FILE_NAME} n5test
+        srun --ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10  ${OUT_FILE_NAME} n5test
         UPLOAD_RESULT="$?"
     fi
 
-    if [ $ILASTIK_RESULT = 0 -a $UPLOAD_RESULT = 0]; then
-        RESULT_STRING="success"
+    if [ $ILASTIK_RESULT = 0 -a $UPLOAD_RESULT = 0 ]; then
+        RESULT_STRING="done"
     else
-        RESULT_STRING="failure"
+        RESULT_STRING="failed"
     fi
 
     RESULT_PAYLOAD=$(echo "{'status':'${RESULT_STRING}', 'result': '${OUT_FILE_NAME}', 'id': '${JOB_ID}'}" | tr "'" '"')
     curl --header "Content-Type: application/json" \
-        --request POST \
+        --request PUT \
         --data  "$RESULT_PAYLOAD"\
         ${ILASTIK_JOB_RESULT_ENDPOINT}/${JOB_ID}/
 

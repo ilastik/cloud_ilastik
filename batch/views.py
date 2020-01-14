@@ -1,9 +1,13 @@
+from pathlib import Path
+
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, response, permissions, generics
 
 from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
+
+import hpc
 
 
 class ProjectListView(generic.ListView):
@@ -49,14 +53,20 @@ class BatchJobViewset(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request):
-        from uuid import uuid4
 
+        jobspec = hpc.IlastikJobSpec(
+            ilp_project=Path("hbp_proj.ilp"),
+            raw_data_url="some",
+            result_endpoint="http://web.ilastik.org/v1/batch/jobs/external",
+            Resources=hpc.JobResources(CPUs=3, Memory="32G"),
+        )
+        job = jobspec.run()
         serializer = serializers.BatchJob(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user = request.user
 
-        models.Job.objects.create(owner=user, external_id=uuid4().hex)
+        models.Job.objects.create(owner=user, external_id=job.job_id)
         return response.Response(serializer.data)
 
 
