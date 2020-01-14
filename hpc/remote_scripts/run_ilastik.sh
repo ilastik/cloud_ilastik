@@ -18,7 +18,7 @@ set -u; set -x
     ILASTIK_RESULT="$?"
 
     if [ $ILASTIK_RESULT = 0 ]; then
-        srun -N 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py ${OUT_FILE_NAME} n5test
+        srun -ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10  ${OUT_FILE_NAME} n5test
         UPLOAD_RESULT="$?"
     fi
 

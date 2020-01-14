@@ -89,7 +89,7 @@ def main():
         uploaded = 0
 
         def _report():
-            sys.stdout.write(f"Upload status: {uploaded}/{total_files} ({100 * uploaded/total_files:.2f}%)\r")
+            sys.stdout.write(f"Upload status: {uploaded}/{total_files} ({100 * uploaded/total_files:.2f}%)\n")
             sys.stdout.flush()
 
         _report()

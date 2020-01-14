@@ -12,7 +12,8 @@ jobspec = IlastikJobSpec(
     )
 )
 
-pprint(jobspec.to_dict())
+#IlastikJobSpec.ensure_valid_token()
+print(repr(jobspec))
 job = jobspec.run()
 dlist = job.working_dir.listdir()
 

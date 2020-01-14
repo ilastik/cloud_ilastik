@@ -3,6 +3,9 @@ from typing import Union
 import json, time, os
 from typing import Dict, List, Optional
 from pathlib import Path
+import json
+import jwt
+import requests
 
 class JobResources:
     def __init__(
@@ -72,7 +75,12 @@ class JobSpec:
 class IlastikJobSpec(JobSpec):
     HPC_PYTHON_EXECUTABLE=os.environ['HPC_PYTHON_EXECUTABLE']
     HPC_ILASTIK_PATH=os.environ['HPC_ILASTIK_PATH']
-    HBP_TOKEN=os.environ['HBP_TOKEN']
+
+    HBP_TOKEN=None
+    HBP_REFRESH_TOKEN=os.environ['HBP_REFRESH_TOKEN']
+    HBP_APP_ID=os.environ['HBP_APP_ID']
+    HBP_APP_SECRET=os.environ['HBP_APP_SECRET']
+
     S3_KEY=os.environ['S3_KEY']
     S3_SECRET=os.environ['S3_SECRET']
 
@@ -86,8 +94,8 @@ class IlastikJobSpec(JobSpec):
     ):
         self.inputs = [
             ilp_project.as_posix(),
-            Path(__file__).parent / 'remote_scripts/run_ilastik.sh',
-            Path(__file__).parent / 'remote_scripts/upload_dir.py'
+            Path(__file__).parent.joinpath('remote_scripts/run_ilastik.sh').as_posix(),
+            Path(__file__).parent.joinpath('remote_scripts/upload_dir.py').as_posix()
         ]
         super().__init__(
             Executable='./run_ilastik.sh',
@@ -104,8 +112,35 @@ class IlastikJobSpec(JobSpec):
             Resources=Resources
         )
 
+    @classmethod
+    def token_is_valid(cls):
+        if cls.HBP_TOKEN is None:
+            return False
+        token = json.loads(jwt.utils.base64url_decode(cls.HBP_TOKEN.split('.')[1]).decode('ascii'))
+        if token['exp'] < time.time() - (15 * 60):
+            return False
+        return True
+
+    @classmethod
+    def get_token(cls):
+        if not cls.token_is_valid():
+            resp = requests.post("https://services.humanbrainproject.eu/oidc/token", data={
+                "refresh_token": cls.HBP_REFRESH_TOKEN,
+                "client_id": cls.HBP_APP_ID,
+                "client_secret": cls.HBP_APP_SECRET,
+                "grant_type": "refresh_token"
+            })
+            print("Refreshed token!")
+            cls.HBP_TOKEN = resp.json()['access_token']
+        return cls.HBP_TOKEN
+
+    def __repr__(self) -> str:
+        data = self.to_dict()
+        data["inputs"] = self.inputs
+        return json.dumps(data, indent=4)
+
     def run(self, token: str = ''):
-        tr = unicore_client.Transport(self.HBP_TOKEN)
+        tr = unicore_client.Transport(self.get_token())
         registry = unicore_client.Registry(tr, unicore_client._HBP_REGISTRY_URL)
         site = registry.site('DAINT-CSCS')
         return site.new_job(
