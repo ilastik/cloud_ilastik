@@ -1,47 +1,31 @@
 #!/usr/bin/env python
+
+"""Upload directory to S3.
+
+Number of upload threads should exceed number of available processors as workload is IO bound.
 """
-To use:
 
-1. Install deps with conda
-conda install -c conda-forge boto3
-
-2. Run
-python upload_dir.py <source_directory> <destination_bucket>
-
-NOTE: Number of threads should exceed number of available processors as workload is IO bound
-"""
 import argparse
 import os
 import pathlib
-import sys
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 import boto3
+import tqdm
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.exceptions import ReadTimeoutError, ConnectTimeoutError
 
 MB = 1024 ** 2
 
-def walk(directory: str):
-    path = pathlib.Path(directory)
-    if not path.is_dir():
-        raise ValueError("Expected directory")
 
-    for entry in path.iterdir():
-        if entry.is_dir():
-            yield from walk(entry)
-        else:
-            yield str(entry)
-
-
-parser = argparse.ArgumentParser(description='Upload directory to S3')
-parser.add_argument('directory', type=str, help='a directory to upload')
-parser.add_argument('bucket_destination', type=str, help='a directory to upload')
+parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.add_argument('directory', type=pathlib.Path, help='directory to upload')
+parser.add_argument('bucket_destination', type=str, help='destination bucket')
 parser.add_argument('-n', '--num-workers', type=int, default=os.cpu_count() * 4, help="number of upload threads")
 parser.add_argument('-t', '--timeout', type=int, default=60, help="timeout")
-parser.add_argument('-r', '--retries', type=int, default=2, help="timeout")
+parser.add_argument('-r', '--retries', type=int, default=2, help="number of retries")
+parser.add_argument('-i', '--interactive', action='store_true', help='show progress bar')
 
 
 def _getenv_or_raise(key):
@@ -53,6 +37,8 @@ def _getenv_or_raise(key):
 
 def main():
     args = parser.parse_args()
+    if not args.directory.is_dir():
+        raise ValueError(f"{args.directory} is not a directory")
 
     key = _getenv_or_raise("S3_KEY")
     secret = _getenv_or_raise("S3_SECRET")
@@ -71,7 +57,8 @@ def main():
 
     s3_client = session.client("s3", config=client_config, endpoint_url="https://object.cscs.ch/")
 
-    def _upload(entry):
+    def _upload(path: pathlib.Path) -> None:
+        entry = str(path)
         ex = None
         for _ in range(args.retries):
             try:
@@ -82,20 +69,18 @@ def main():
 
         raise ex
 
+    files_to_upload = list(filter(pathlib.Path.is_file, args.directory.rglob("*")))
+
     with ThreadPoolExecutor(max_workers=args.num_workers) as ex:
-        print(f"Uploading {args.directory} to {args.bucket_destination}")
-        files_to_upload = list(walk(args.directory))
-        total_files = len(files_to_upload)
-        uploaded = 0
-
-        def _report():
-            sys.stdout.write(f"Upload status: {uploaded}/{total_files} ({100 * uploaded/total_files:.2f}%)\n")
-            sys.stdout.flush()
-
-        _report()
-        for entry in ex.map(_upload, files_to_upload):
-            uploaded += 1
-            _report()
+        it = tqdm.tqdm(
+            ex.map(_upload, files_to_upload),
+            desc=f"Uploading {args.directory} to {args.bucket_destination}",
+            total=len(files_to_upload),
+            disable=not args.interactive,
+            unit="files",
+        )
+        for _ in it:
+            pass
 
 
 if __name__ == "__main__":
