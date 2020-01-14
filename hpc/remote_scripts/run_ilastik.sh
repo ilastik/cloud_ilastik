@@ -28,11 +28,11 @@ set -u; set -x
         RESULT_STRING="failure"
     fi
 
-    RESULT_PAYLOAD=$(echo "{'result':'${RESULT_STRING}', 'output': '${OUT_FILE_NAME}', 'id': '${JOB_ID}'}" | tr "'" '"')
+    RESULT_PAYLOAD=$(echo "{'status':'${RESULT_STRING}', 'result': '${OUT_FILE_NAME}', 'id': '${JOB_ID}'}" | tr "'" '"')
     curl --header "Content-Type: application/json" \
         --request POST \
         --data  "$RESULT_PAYLOAD"\
-        ${ILASTIK_JOB_RESULT_ENDPOINT}
+        ${ILASTIK_JOB_RESULT_ENDPOINT}/${JOB_ID}/
 
 set +u; set +x
 
