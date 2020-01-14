@@ -1,5 +1,7 @@
 from django.db import models
 
+import batch.models as batch_models
+
 
 class Dataset(models.Model):
     name = models.CharField(max_length=255)
@@ -9,6 +11,11 @@ class Dataset(models.Model):
     size_y = models.PositiveIntegerField()
     size_x = models.PositiveIntegerField()
     size_c = models.PositiveIntegerField(default=1)
+    job = models.ForeignKey(batch_models.Job, on_delete=models.SET_NULL, null=True, blank=True, default=None)
+
+    @property
+    def owner(self):
+        return self.job.owner if self.job else None
 
     @property
     def sizes(self):
