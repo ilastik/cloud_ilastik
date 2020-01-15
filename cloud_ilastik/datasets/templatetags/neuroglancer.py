@@ -85,7 +85,7 @@ def viewer_url(url: str, num_channels: int) -> str:
             }
         ],
         "selectedLayer": {"layer": "exported_data", "visible": True},
-        "layout": "yz",  # TODO: Fix layout detection based on dataset properties
+        "layout": "xy",  # TODO: Fix layout detection based on dataset properties
     }
     quoted_config = urllib.parse.quote(json.dumps(ng_config))
     return ng_url + quoted_config
