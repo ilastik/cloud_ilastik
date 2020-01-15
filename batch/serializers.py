@@ -16,8 +16,13 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class BatchJob(serializers.Serializer):
-    project = serializers.CharField()
-    datasets = serializers.ListField(child=serializers.CharField())
+    project = serializers.PrimaryKeyRelatedField(queryset=models.Project.objects.all(), allow_null=False)
+    datasets = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=datasets_models.Dataset.objects.all(), allow_null=False
+    )
+
+    class Meta:
+        fields = ["project", "datasets"]
 
 
 class JobUpdate(serializers.Serializer):

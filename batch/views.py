@@ -53,21 +53,32 @@ class BatchJobViewset(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request):
-
-        jobspec = hpc.IlastikJobSpec(
-            ilp_project=Path("hbp_proj.ilp"),
-            raw_data_url="some",
-            result_endpoint="http://web.ilastik.org/v1/batch/jobs/external",
-            Resources=hpc.JobResources(CPUs=3, Memory="32G"),
-        )
-        job = jobspec.run()
         serializer = serializers.BatchJob(data=request.data)
         serializer.is_valid(raise_exception=True)
+        proj = models.Project.objects.only("file__data").get(id=serializer.data["project"])
+        datasets = datasets_models.Dataset.objects.filter(id__in=serializer.data["datasets"])
+        jobs = []
 
-        user = request.user
+        for ds in datasets:
+            jobs.append(models.Job(project=proj, raw_data=ds, owner=request.user))
 
-        models.Job.objects.create(owner=user, external_id=job.job_id)
-        return response.Response(serializer.data)
+        models.Job.objects.bulk_create(jobs)
+
+        # submit jobs
+        for job in jobs:
+            proj_file_path = job.project.file.data.path
+            jobspec = hpc.IlastikJobSpec(
+                ilp_project=Path(proj_file_path),
+                raw_data_url=job.raw_data.tar_url,
+                result_endpoint="http://web.ilastik.org/v1/batch/jobs/external",
+                Resources=hpc.JobResources(CPUs=3, Memory="32G"),
+            )
+            unicore_job = jobspec.run()
+            job.external_id = unicore_job.job_id
+            job.status = models.JobStatus.running.value
+            job.save()
+
+        return response.Response(status=204)
 
 
 class JobDoneView(generics.UpdateAPIView):
