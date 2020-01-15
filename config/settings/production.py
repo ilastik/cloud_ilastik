@@ -99,3 +99,5 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+STATIC_ROOT = "/var/www/web.ilastik.org/static"
+MEDIA_ROOT = "/var/www/web.ilastik.org/media"
