@@ -10,6 +10,9 @@ from cloud_ilastik.datasets import models as datasets_models
 import hpc
 
 
+_30_MINUTES = 30 * 60
+
+
 class ProjectListView(generic.ListView):
     def get_queryset(self):
         return models.Project.objects.filter(file__owner_id=self.request.user.id)
@@ -71,7 +74,7 @@ class BatchJobViewset(viewsets.ViewSet):
                 ilp_project=Path(proj_file_path),
                 raw_data_url=job.raw_data.tar_url,
                 result_endpoint="http://web.ilastik.org/v1/batch/jobs/external",
-                Resources=hpc.JobResources(CPUs=3, Memory="32G"),
+                Resources=hpc.JobResources(CPUs=10, Memory="32G", Runtime=_30_MINUTES),
             )
             unicore_job = jobspec.run()
             job.external_id = unicore_job.job_id
