@@ -86,7 +86,7 @@ class BatchJobViewset(viewsets.ViewSet):
 
 class JobDoneView(generics.UpdateAPIView):
     def update(self, request, external_id: str):
-        serializer = serializers.JobUpdate(data=request.data)
+        serializer = serializers.JobUpdate(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
         status = serializer.data["status"]
