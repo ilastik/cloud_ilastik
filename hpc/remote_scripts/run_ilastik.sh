@@ -11,11 +11,13 @@ set -u; set -x
     tar -xvf raw_data.n5.tar --strip-components=2 #FIXME: Handle arbitrary files
 
     srun $HPC_PYTHON_EXECUTABLE -u $HPC_ILASTIK_PATH \
-         --headless \
-        --project $ILASTIK_PROJECT_FILE \
-        --distributed --distributed_block_size=$ILASTIK_BLOCK_SIZE \
-        --output_filename_format $OUT_FILE_NAME \
-        --export-dtype $ILASTIK_EXPORT_DTYPE \
+        --headless \
+        --export_dtype "$ILASTIK_EXPORT_DTYPE" \
+        --project "$ILASTIK_PROJECT_FILE" \
+        --distributed --distributed_block_size="$ILASTIK_BLOCK_SIZE" \
+        --pipeline_result_drange "${ILASTIK_PIPELINE_RESULT_DRANGE}" \
+        --export_drange "${ILASTIK_EXPORT_DRANGE}" \
+        --output_filename_format "$OUT_FILE_NAME" \
         --raw_data *.n5/data #FIXME: allow for non /n5 inputs
     ILASTIK_RESULT="$?"
 
