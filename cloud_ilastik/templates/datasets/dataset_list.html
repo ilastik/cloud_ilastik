@@ -1,32 +1,27 @@
 {% extends 'base.html' %}
 
+{% load neuroglancer %}
+
 {% block title %}Datasets{% endblock %}
 
 {% block content %}
   <h2>Datasets</h2>
 
-  <ul>
+  <table class="table">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Dataset</th>
+      <th scope="col">Shape</th>
+    </tr>
+  </thead>
+  <tbody>
   {% for dataset in object_list %}
-    <li>
-      <a href="{{ dataset.url }}">{{ dataset.name }}</a>
-
-      <dl>
-        <dt>Time</dt>
-        <dd>{{ dataset.size_t }}</dd>
-
-        <dt>Z</dt>
-        <dd>{{ dataset.size_z }}</dd>
-
-        <dt>Y</dt>
-        <dd>{{ dataset.size_y }}</dd>
-
-        <dt>X</dt>
-        <dd>{{ dataset.size_x }}</dd>
-
-        <dt>Channels</dt>
-        <dd>{{ dataset.size_c }}</dd>
-      </dl>
-    </li>
+      <tr>
+        <th scope="row">{{ forloop.counter }}</th>
+        <th><a href="{{ dataset.url|viewer_url }}">{{ dataset.name }}</a></th>
+        <th>c: {{ dataset.size_c }}, x: {{ dataset.size_x }}, y: {{ dataset.size_y }}, z: {{ dataset.size_z }}, t: {{ dataset.size_t }}</th>
+      </tr>
   {% endfor %}
-  </ul>
+  </tbody>
 {% endblock %}
