@@ -10,5 +10,5 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(models.Job)
 class JobAdmin(admin.ModelAdmin):
-    list_display = ["id", "owner", "status", "project", "created_on"]
-    readonly_fields = ["owner", "project", "created_on"]
+    list_display = ["id", "owner", "status", "project", "created_on", "external_id"]
+    readonly_fields = ["owner", "project", "created_on", "external_id"]
