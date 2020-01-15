@@ -32,8 +32,8 @@ set -u; set -x
         RESULT_STRING="failed"
     fi
 
-    srun -ntasks 1 "${HPC_PYTHON_EXECUTABLE}" -u update_status.py \
-      "${ILASTIK_JOB_RESULT_ENDPOINT}" "${JOB_ID}" "${STATUS}" \
+    srun --ntasks 1 "${HPC_PYTHON_EXECUTABLE}" -u update_status.py \
+      "${ILASTIK_JOB_RESULT_ENDPOINT}" "${JOB_ID}" "${RESULT_STRING}" \
       --output "${OUT_FILE_NAME}" --bucket "${BUCKET_NAME}"
 
 set +u; set +x

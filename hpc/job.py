@@ -139,6 +139,7 @@ class IlastikJobSpec(JobSpec):
         self.inputs = [
             ilp_project.as_posix(),
             Path(__file__).parent.joinpath('remote_scripts/run_ilastik.sh').as_posix(),
+            Path(__file__).parent.joinpath('remote_scripts/update_status.py').as_posix(),
             Path(__file__).parent.joinpath('remote_scripts/upload_dir.py').as_posix()
         ]
         super().__init__(

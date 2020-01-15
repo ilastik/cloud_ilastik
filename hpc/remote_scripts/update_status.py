@@ -5,7 +5,7 @@
 import argparse
 import json
 import pathlib
-import urllib.request
+import requests
 import urllib.parse
 
 # FIXME: The account name can change.
@@ -42,23 +42,21 @@ def main():
 
     if args.status == "done":
         with open(args.output / "exported_data" / "attributes.json") as fd:
-            attrs = json.loads(fd)
+            attrs = json.loads(fd.read())
         data = {
             **data,
-            "result_url": f"https://object.cscs.ch/v1/{ACCOUNT}/{args.bucket}/{args.output.name}",
+            "result_url": f"https://object.cscs.ch/v1/{ACCOUNT}/{args.bucket}/{args.output.name}/exported_data",
             "name": args.output.name,
             "dtype": attrs["dataType"],
             **{f"size_{k}": v for k, v in zip(attrs["axes"], attrs["dimensions"])},
         }
 
-    urllib.request.urlopen(
-        urllib.request.Request(
-            urllib.parse.urljoin(args.endpoint, args.job),
-            data=json.dumps(data).encode(),
-            headers={"Content-Type": "application/json"},
-        ),
-        timeout=10,
-    )
+    url = urllib.parse.urljoin(args.endpoint, args.job)
+    print(f"Posting job report back to {url}")
+    print(json.dumps(data, indent=4))
+    result = requests.post(url, json=data)
+    print(f"Report response: {result.status_code}")
+    print(result.text)
 
 
 if __name__ == "__main__":
