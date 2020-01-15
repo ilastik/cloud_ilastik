@@ -1,11 +1,12 @@
 import pyunicore.client as unicore_client
 from typing import Union
 import json, time, os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 import json
 import jwt
 import requests
+from numbers import Number
 
 class JobResources:
     def __init__(
@@ -130,12 +131,15 @@ class IlastikJobSpec(JobSpec):
         result_endpoint: str,
         Resources: JobResources,
         block_size: int = 1024,
-        export_dtype: str = 'uint8'
+        export_dtype: str = 'uint8',
+        pipeline_result_drange : Tuple[Number, Number] = (0.1, 1.0),
+        export_drange : Tuple[Number, Number] = (0, 255)
     ):
         self.hpc_environment = hpc_environment or HpcEnvironment()
         self.inputs = [
             ilp_project.as_posix(),
             Path(__file__).parent.joinpath('remote_scripts/run_ilastik.sh').as_posix(),
+            Path(__file__).parent.joinpath('remote_scripts/update_status.py').as_posix(),
             Path(__file__).parent.joinpath('remote_scripts/upload_dir.py').as_posix()
         ]
         super().__init__(
@@ -148,7 +152,9 @@ class IlastikJobSpec(JobSpec):
                 'S3_KEY': self.hpc_environment.S3_KEY,
                 'S3_SECRET': self.hpc_environment.S3_SECRET,
                 'ILASTIK_JOB_RESULT_ENDPOINT': result_endpoint,
-                'ILASTIK_EXPORT_DTYPE': export_dtype
+                'ILASTIK_EXPORT_DTYPE': export_dtype,
+                'ILASTIK_EXPORT_DRANGE': str(export_drange),
+                'ILASTIK_PIPELINE_RESULT_DRANGE': str(pipeline_result_drange)
             },
             Imports=[JobImport(From=raw_data_url, To='raw_data.n5.tar')], #FIXME: allow for non-n5
             Resources=Resources
