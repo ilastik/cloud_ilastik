@@ -1,1 +1,1 @@
-from hpc.job import IlastikJobSpec, JobResources
+from hpc.job import IlastikJobSpec, JobResources, HpcEnvironment
