@@ -75,8 +75,20 @@ class JobDoneView(generics.UpdateAPIView):
         serializer = serializers.JobUpdate(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        status = serializer.data["status"]
+
         job = get_object_or_404(models.Job, external_id=external_id)
-        job.status = serializer.data["status"]
+        job.status = status
         job.save()
+
+        if status == "done":
+            dataset_params = {
+                "name": serializer.data["name"],
+                "url": serializer.data["result_url"],
+                "dtype": serializer.data["dtype"],
+                **{k: v for k, v in serializer.data.items() if k.startswith("size_")},
+                "job": job,
+            }
+            datasets_models.Dataset(**dataset_params).save()
 
         return response.Response(status=204)

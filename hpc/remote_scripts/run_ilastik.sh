@@ -5,7 +5,8 @@ export PYTHONPATH=/users/bp000188/source/ndstructs/
 
 set -u; set -x
     JOB_ID=${PWD##*/} #FIXME: try to get from unicore
-    OUT_FILE_NAME="./out_${JOB_ID}.n5"
+    OUT_FILE_NAME="out_${JOB_ID}.n5"
+    BUCKET_NAME='n5test'
 
     tar -xvf raw_data.n5.tar --strip-components=2 #FIXME: Handle arbitrary files
 
@@ -19,7 +20,7 @@ set -u; set -x
     ILASTIK_RESULT="$?"
 
     if [ $ILASTIK_RESULT = 0 ]; then
-        srun --ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10  ${OUT_FILE_NAME} n5test
+        srun --ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10 "${OUT_FILE_NAME}" "${BUCKET_NAME}"
         UPLOAD_RESULT="$?"
     fi
 
@@ -29,12 +30,9 @@ set -u; set -x
         RESULT_STRING="failed"
     fi
 
-    RESULT_PAYLOAD=$(echo "{'status':'${RESULT_STRING}', 'result': '${OUT_FILE_NAME}', 'id': '${JOB_ID}'}" | tr "'" '"')
-    curl -v \
-        --header "Content-Type: application/json" \
-        --request PUT \
-        --data  "$RESULT_PAYLOAD"\
-        ${ILASTIK_JOB_RESULT_ENDPOINT}/${JOB_ID}/
+    srun -ntasks 1 "${HPC_PYTHON_EXECUTABLE}" -u update_status.py \
+      "${ILASTIK_JOB_RESULT_ENDPOINT}" "${JOB_ID}" "${STATUS}" \
+      --output "${OUT_FILE_NAME}" --bucket "${BUCKET_NAME}"
 
 set +u; set +x
 

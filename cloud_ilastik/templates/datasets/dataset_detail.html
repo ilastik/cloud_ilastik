@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Dataset {{ object.name }}{% endblock %}
+
+{% block content %}
+  <h2>Dataset <a href="{{ object.url }}">{{ object.name }}</a></h2>
+
+  <dl>
+    <dt>Data Type</dt>
+    <dd>{{ object.dtype }}</dd>
+
+    <dt>Time</dt>
+    <dd>{{ object.size_t }}</dd>
+
+    <dt>Z</dt>
+    <dd>{{ object.size_z }}</dd>
+
+    <dt>Y</dt>
+    <dd>{{ object.size_y }}</dd>
+
+    <dt>X</dt>
+    <dd>{{ object.size_x }}</dd>
+
+    <dt>Channels</dt>
+    <dd>{{ object.size_c }}</dd>
+  </dl>
+
+{% endblock %}

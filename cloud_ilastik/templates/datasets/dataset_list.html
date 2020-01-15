@@ -8,24 +8,8 @@
   <ul>
   {% for dataset in object_list %}
     <li>
-      <a href="{{ dataset.url }}">{{ dataset.name }}</a>
+      <a href="{% url "datasets:detail" dataset.pk %}">{{ dataset.name }}</a>
 
-      <dl>
-        <dt>Time</dt>
-        <dd>{{ dataset.size_t }}</dd>
-
-        <dt>Z</dt>
-        <dd>{{ dataset.size_z }}</dd>
-
-        <dt>Y</dt>
-        <dd>{{ dataset.size_y }}</dd>
-
-        <dt>X</dt>
-        <dd>{{ dataset.size_x }}</dd>
-
-        <dt>Channels</dt>
-        <dd>{{ dataset.size_c }}</dd>
-      </dl>
     </li>
   {% endfor %}
   </ul>
