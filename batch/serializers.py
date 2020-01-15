@@ -15,6 +15,12 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
         fields = ["id", "html_url", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
 
 
+class JobSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Job
+        fields = ["id", "status", "created_on"]
+
+
 class BatchJob(serializers.Serializer):
     project = serializers.PrimaryKeyRelatedField(queryset=models.Project.objects.all(), allow_null=False)
     datasets = serializers.PrimaryKeyRelatedField(
