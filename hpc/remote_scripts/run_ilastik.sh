@@ -8,7 +8,7 @@ set -u; set -x
     OUT_FILE_NAME="out_${JOB_ID}.n5"
     BUCKET_NAME='n5test'
 
-    tar -xvf raw_data.n5.tar --strip-components=2 #FIXME: Handle arbitrary files
+    srun --ntasks 1 tar -xvf raw_data.n5.tar --strip-components=2 #FIXME: Handle arbitrary files
 
     srun $HPC_PYTHON_EXECUTABLE -u $HPC_ILASTIK_PATH \
         --headless \
@@ -21,6 +21,7 @@ set -u; set -x
         --raw_data *.n5/data #FIXME: allow for non /n5 inputs
     ILASTIK_RESULT="$?"
 
+    UPLOAD_RESULT=1
     if [ $ILASTIK_RESULT = 0 ]; then
         srun --ntasks 1 $HPC_PYTHON_EXECUTABLE -u upload_dir.py -n 10 "${OUT_FILE_NAME}" "${BUCKET_NAME}"
         UPLOAD_RESULT="$?"
