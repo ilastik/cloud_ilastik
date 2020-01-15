@@ -6,7 +6,7 @@ import argparse
 import json
 import pathlib
 import requests
-import os.path
+import urllib.parse
 
 # FIXME: The account name can change.
 ACCOUNT = "AUTH_2dc0b65279674a42833a064ce3677297"
@@ -51,10 +51,10 @@ def main():
             **{f"size_{k}": v for k, v in zip(attrs["axes"], attrs["dimensions"])},
         }
 
-    url = os.path.join(args.endpoint, args.job)
+    url = urllib.parse.urljoin(f"{args.endpoint}/", f"{args.job}/")
     print(f"Posting job report back to {url}")
     print(json.dumps(data, indent=4))
-    result = requests.post(url, json=data)
+    result = requests.put(url, json=data)
     print(f"Report response: {result.status_code}")
     print(result.text)
 
