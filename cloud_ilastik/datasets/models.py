@@ -1,8 +1,12 @@
 import enum
+import re
 
 from django.db import models
 
 import batch.models as batch_models
+
+
+TAR_URL_RE = re.compile("/data$")
 
 
 class DType(str, enum.Enum):
@@ -11,7 +15,7 @@ class DType(str, enum.Enum):
 
     uint8 = enum.auto()
     uint16 = enum.auto()
-    uint32= enum.auto()
+    uint32 = enum.auto()
     uint64 = enum.auto()
     int8 = enum.auto()
     int16 = enum.auto()
@@ -47,7 +51,11 @@ class Dataset(models.Model):
 
     @property
     def sizes(self):
-        return {'t': self.size_t, 'z': self.size_z, 'y': self.size_y, 'x': self.size_x, 'c': self.size_c}
+        return {"t": self.size_t, "z": self.size_z, "y": self.size_y, "x": self.size_x, "c": self.size_c}
+
+    @property
+    def tar_url(self):
+        return TAR_URL_RE.sub(".tar", self.url)
 
     def __str__(self):
-        return f'{self.name} {self.sizes} <{self.url}>'
+        return f"{self.name} {self.sizes} <{self.url}>"

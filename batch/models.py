@@ -65,10 +65,16 @@ class Job(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    external_id = models.CharField(max_length=255, unique=True)
+    external_id = models.CharField(max_length=255, unique=True, null=True, blank=True, editable=False)
     status = models.CharField(max_length=20, choices=JobStatus.choices(), default=JobStatus.created.value)
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, editable=False)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, editable=False)
     created_on = models.DateTimeField(auto_now_add=True, editable=False)
+
+    # TODO: Should be many to many relation with roles
+    raw_data = models.ForeignKey(
+        "datasets.Dataset", editable=False, null=True, blank=False, on_delete=models.PROTECT, related_name="+"
+    )
+    project = models.ForeignKey(Project, editable=False, null=True, blank=False, on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = "Job"
