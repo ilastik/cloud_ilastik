@@ -14,6 +14,7 @@ set -u; set -x
         --project $ILASTIK_PROJECT_FILE \
         --distributed --distributed_block_size=$ILASTIK_BLOCK_SIZE \
         --output_filename_format $OUT_FILE_NAME \
+        --export-dtype $ILASTIK_EXPORT_DTYPE \
         --raw_data *.n5/data #FIXME: allow for non /n5 inputs
     ILASTIK_RESULT="$?"
 
@@ -29,7 +30,8 @@ set -u; set -x
     fi
 
     RESULT_PAYLOAD=$(echo "{'status':'${RESULT_STRING}', 'result': '${OUT_FILE_NAME}', 'id': '${JOB_ID}'}" | tr "'" '"')
-    curl --header "Content-Type: application/json" \
+    curl -v \
+        --header "Content-Type: application/json" \
         --request PUT \
         --data  "$RESULT_PAYLOAD"\
         ${ILASTIK_JOB_RESULT_ENDPOINT}/${JOB_ID}/
