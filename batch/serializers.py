@@ -27,7 +27,7 @@ class BatchJob(serializers.Serializer):
 
 class JobUpdate(serializers.Serializer):
     status = serializers.ChoiceField(choices=[models.JobStatus.done.value, models.JobStatus.failed.value])
-    result_url = serializers.HyperlinkedIdentityField("datasets:detail")
+    result_url = serializers.URLField()
     name = serializers.CharField()
     dtype = serializers.ChoiceField(choices=datasets_models.DType.values())
     size_t = serializers.IntegerField(default=1)
