@@ -12,3 +12,4 @@ class ProjectAdmin(admin.ModelAdmin):
 class JobAdmin(admin.ModelAdmin):
     list_display = ["id", "owner", "status", "project", "created_on", "external_id"]
     readonly_fields = ["owner", "project", "created_on", "external_id"]
+    ordering = ["-created_on"]
