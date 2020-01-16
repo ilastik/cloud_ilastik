@@ -68,8 +68,8 @@ def createFragShader(channel_colors: List[Color]):
 
 @register.filter(is_safe=True)
 def viewer_url(url: str, num_channels: int) -> str:
-    ng_url = "http://web.ilastik.org/viewer/#!"
-    data_url = url.replace(settings.SWIFT_PREFIX, "http://web.ilastik.org/ngdata/")
+    ng_url = "https://web.ilastik.org/viewer/#!"
+    data_url = url.replace(settings.SWIFT_PREFIX, "https://web.ilastik.org/data/")
     ng_config = {
         "dimensions": {"c": [1e-9, "m"], "x": [1e-9, "m"], "y": [1e-9, "m"]},
         "crossSectionScale": 1,
