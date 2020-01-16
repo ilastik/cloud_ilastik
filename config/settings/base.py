@@ -3,6 +3,7 @@ Base settings to build other settings files upon.
 """
 
 import environ
+from datetime import timedelta
 
 ROOT_DIR = environ.Path(__file__) - 3  # (cloud_ilastik/config/settings/base.py - 3 = cloud_ilastik/)
 APPS_DIR = ROOT_DIR.path("cloud_ilastik")
@@ -250,7 +251,7 @@ if USE_TZ:
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="")
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = None
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
 CELERY_ACCEPT_CONTENT = ["json"]
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-task_serializer
@@ -264,7 +265,11 @@ CELERY_TASK_TIME_LIMIT = 5 * 60
 # TODO: set to whatever value is adequate in your circumstances
 CELERY_TASK_SOFT_TIME_LIMIT = 60
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#beat-scheduler
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "Submit pending tasks": {"task": "batch.tasks.submit_new_tasks", "schedule": timedelta(seconds=10)}
+}
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)

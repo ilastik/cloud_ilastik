@@ -5,15 +5,16 @@ setup_dev:
 	python ./manage.py migrate
 	python ./manage.py createsuperuser --username=ilastik --password=ilastik --email=ilastik@example.com --noinput
 
-runserver:
-	python ./manage.py check --tag=database
-	python ./manage.py runserver
+run_server:
+	venv/bin/python ./manage.py check --tag=database
+	venv/bin/python ./manage.py runserver
 
+run_worker:
+	venv/bin/celery beat -A config.celery_app --loglevel=INFO
 
 clean:
 	rm -fr venv
 	rm -fr temp.db
 	rm -fr cloud_ilastik/media/
 
-
-.PHONY: clean setup
+.PHONY: clean setup run_server, run_worker
