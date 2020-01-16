@@ -69,6 +69,7 @@ class Job(models.Model):
     status = models.CharField(max_length=20, choices=JobStatus.choices(), default=JobStatus.created.value)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, editable=False)
     created_on = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_on = models.DateTimeField(auto_now=True, editable=False)
 
     # TODO: Should be many to many relation with roles
     raw_data = models.ForeignKey(

@@ -1,16 +1,9 @@
-from pathlib import Path
-
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, response, permissions, generics
 
 from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
-
-import hpc
-
-
-_30_MINUTES = 30 * 60
 
 
 class ProjectListView(generic.ListView):
@@ -76,19 +69,6 @@ class BatchJobViewset(viewsets.ViewSet):
         models.Job.objects.bulk_create(jobs)
 
         # submit jobs
-        for job in jobs:
-            proj_file_path = job.project.file.data.path
-            jobspec = hpc.IlastikJobSpec(
-                ilp_project=Path(proj_file_path),
-                raw_data_url=job.raw_data.tar_url,
-                result_endpoint="https://web.ilastik.org/v1/batch/jobs/external",
-                Resources=hpc.JobResources(CPUs=10, Memory="32G", Runtime=_30_MINUTES),
-            )
-            unicore_job = jobspec.run()
-            job.external_id = unicore_job.job_id
-            job.status = models.JobStatus.running.value
-            job.save()
-
         return response.Response(status=204)
 
 
