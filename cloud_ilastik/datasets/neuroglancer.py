@@ -80,7 +80,7 @@ def viewer_url(url: str, num_channels: int) -> str:
                 "shader": _create_fragment_shader(_Color.get_distinct_colors(num_channels)),
             }
         ],
-        "selectedLayer": {"layer": "exported_data", "visible": True},
+        "selectedLayer": {"layer": "exported_data"},
         "layout": "xy",  # TODO: Fix layout detection based on dataset properties
     }
     quoted_config = urllib.parse.quote(json.dumps(ng_config))
