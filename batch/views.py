@@ -52,6 +52,14 @@ class ProjectViewset(viewsets.ViewSet):
         return response.Response(serializer.data)
 
 
+class JobViewset(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = serializers.JobSerializer
+
+    def get_queryset(self):
+        return models.Job.objects.filter(project_id=self.kwargs["project_id"]).order_by("-created_on")
+
+
 class BatchJobViewset(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 

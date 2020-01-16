@@ -1,9 +1,49 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Project {{ object.name }}{% endblock %}
 
 {% block content %}
   <h2>Project {{ object.name }}</h2>
+
+  <h3>Jobs</h3>
+  <ul id="jobs" data-fetch-url="{% url "job-list" object.pk %}"></ul>
+
+  <script type="module">
+    import { Component, h, render } from '{% static "js/preact/preact.module.js" %}';
+
+    const JobItem = ({id, status, created_on}) => h('li', null, `${id} ${status} ${created_on}`);
+
+    class JobList extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {jobs: []};
+      }
+
+      async update() {
+        const jobs = await fetch(this.props.fetchUrl).then(r => r.json());
+        this.setState({...this.state, jobs});
+      }
+
+      componentDidMount() {
+        this.update();
+        this.timer = setInterval(() => this.update(), this.props.refreshInterval);
+      }
+
+      componentWillUnmount() {
+        clearInterval(this.timer);
+      }
+
+      render() {
+        const children = this.state.jobs.map(JobItem);
+        return h('ul', null, ...children);
+      }
+    }
+
+    const root = document.getElementById('jobs');
+    const app = h(JobList, {fetchUrl: root.dataset.fetchUrl, refreshInterval: 10000});
+    render(app, root);
+  </script>
 
   <form id="batch-job-form">
     {% csrf_token %}
