@@ -9,16 +9,26 @@
   <thead>
     <tr>
       <th scope="col">#</th>
-      <th scope="col">Dataset</th>
-      <th scope="col">Shape</th>
+      <th scope="col">Name</th>
+      <th scope="col"></th>
+      <th scope="col">Time</th>
+      <th scope="col">Z</th>
+      <th scope="col">Y</th>
+      <th scope="col">X</th>
+      <th scope="col">Channels</th>
     </tr>
   </thead>
   <tbody>
   {% for dataset in object_list %}
       <tr>
         <th scope="row">{{ forloop.counter }}</th>
-        <th><a href="{{ dataset.neuroglancer_url }}">{{ dataset.name }}</a></th>
-        <th>c: {{ dataset.size_c }}, x: {{ dataset.size_x }}, y: {{ dataset.size_y }}, z: {{ dataset.size_z }}, t: {{ dataset.size_t }}</th>
+        <td><a href="{% url 'datasets:detail' dataset.pk %}">{{ dataset.name }}</a></td>
+        <td><a href="{{ dataset.neuroglancer_url }}" target="_blank" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></td>
+        <td>{{ dataset.size_t }}</td>
+        <td>{{ dataset.size_z }}</td>
+        <td>{{ dataset.size_t }}</td>
+        <td>{{ dataset.size_x }}</td>
+        <td>{{ dataset.size_c }}</td>
       </tr>
   {% endfor %}
   </tbody>
