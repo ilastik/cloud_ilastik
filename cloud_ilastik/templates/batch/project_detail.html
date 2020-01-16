@@ -12,7 +12,7 @@
   <script type="module">
     import { Component, h, render } from '{% static "js/preact/preact.module.js" %}';
 
-    const JobItem = ({id, status, created_on}) => h('li', null, `${id} ${status} ${created_on}`);
+    const JobItem = ({id, status, created_on}) => h('li', {key: id}, `${id} ${status} ${created_on}`);
 
     class JobList extends Component {
       constructor(props) {
