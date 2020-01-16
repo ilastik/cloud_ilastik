@@ -290,3 +290,4 @@ SOCIALACCOUNT_ADAPTER = "cloud_ilastik.users.adapters.SocialAccountAdapter"
 SOCIALACCOUNT_PROVIDERS = {"hbp_oauth2": {"SCOPE": ["offline_access", "profile"]}}
 TRAINING_API_URL = "https://web.ilastik.org/training/api/"
 SWIFT_PREFIX = env("SWIFT_PREFIX", default="https://web.ilastik.org/ngdata/")
+HPC_JOB_RESULT_ENDPOINT = "https://web.ilastik.org/v1/batch/jobs/external"

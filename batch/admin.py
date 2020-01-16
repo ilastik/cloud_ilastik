@@ -10,6 +10,6 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(models.Job)
 class JobAdmin(admin.ModelAdmin):
-    list_display = ["id", "owner", "status", "project", "created_on", "external_id"]
-    readonly_fields = ["owner", "project", "created_on", "external_id"]
+    list_display = ["id", "owner", "status", "project", "external_id", "created_on", "updated_on"]
+    readonly_fields = ["owner", "project", "external_id", "created_on", "updated_on"]
     ordering = ["-created_on"]
