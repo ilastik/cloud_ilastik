@@ -4,7 +4,7 @@ import re
 from django.db import models
 
 import batch.models as batch_models
-
+import files.models as files_models
 
 TAR_URL_RE = re.compile("/data$")
 
@@ -44,10 +44,13 @@ class Dataset(models.Model):
     size_x = models.PositiveIntegerField()
     size_c = models.PositiveIntegerField(default=1)
     job = models.ForeignKey(batch_models.Job, on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    owner = models.ForeignKey(files_models.User, on_delete=models.SET_NULL, null=True)
+    is_public = models.BooleanField(default=False)
 
-    @property
-    def owner(self):
-        return self.job.owner if self.job else None
+    def save(self, *args, **kwargs):
+        if not self.owner and self.job:
+            self.owner = self.job.owner
+        super().save(*args, **kwargs)
 
     @property
     def sizes(self):
