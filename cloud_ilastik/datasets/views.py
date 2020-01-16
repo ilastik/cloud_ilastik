@@ -7,7 +7,10 @@ from cloud_ilastik.datasets.models import Dataset
 
 class ListView(generic.ListView):
     def get_queryset(self):
-        return Dataset.objects.filter(Q(is_public=True) | Q(owner=self.request.user))
+        query = Q(is_public=True)
+        if not self.request.user.is_anonymous:
+            query |= Q(owner=self.request.user)
+        return Dataset.objects.filter(query)
 
 
 class DetailView(mixins.UserPassesTestMixin, generic.DetailView):
