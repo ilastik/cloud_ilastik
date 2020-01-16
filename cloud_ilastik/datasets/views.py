@@ -1,11 +1,18 @@
+from django.contrib.auth import mixins
+from django.db.models import Q
 from django.views import generic
 
 from cloud_ilastik.datasets.models import Dataset
 
 
 class ListView(generic.ListView):
-    model = Dataset
+    def get_queryset(self):
+        return Dataset.objects.filter(Q(is_public=True) | Q(owner=self.request.user))
 
 
-class DetailView(generic.DetailView):
+class DetailView(mixins.UserPassesTestMixin, generic.DetailView):
     model = Dataset
+
+    def test_func(self):
+        dataset = self.get_object()
+        return dataset.is_public or dataset.owner == self.request.user

@@ -3,26 +3,9 @@
 {% block title %}Dataset {{ object.name }}{% endblock %}
 
 {% block content %}
-  <h2>Dataset <a href="{{ object.url }}">{{ object.name }}</a></h2>
+  <h2>Dataset {{ object.name }} <a href="{{ object.neuroglancer_url }}" target="_blank" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></h2>
 
-  <dl>
-    <dt>Data Type</dt>
-    <dd>{{ object.dtype }}</dd>
-
-    <dt>Time</dt>
-    <dd>{{ object.size_t }}</dd>
-
-    <dt>Z</dt>
-    <dd>{{ object.size_z }}</dd>
-
-    <dt>Y</dt>
-    <dd>{{ object.size_y }}</dd>
-
-    <dt>X</dt>
-    <dd>{{ object.size_x }}</dd>
-
-    <dt>Channels</dt>
-    <dd>{{ object.size_c }}</dd>
-  </dl>
-
+  <div class="embed-responsive embed-responsive-1by1">
+    <iframe title="{{ object.name }}" src="{{ object.neuroglancer_url }}" class="embed-responsive-item"></iframe>
+  </div>
 {% endblock %}

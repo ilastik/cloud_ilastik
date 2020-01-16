@@ -25,6 +25,7 @@ class Command(BaseCommand):
                         size_x=row["x"],
                         size_y=row["y"],
                         size_z=row["z"],
+                        is_public=True,
                     )
                 )
 
