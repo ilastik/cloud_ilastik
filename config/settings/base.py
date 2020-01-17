@@ -243,6 +243,16 @@ LOGGING = {
     "root": {"level": "INFO", "handlers": ["console"]},
 }
 
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "KEY_PREFIX": "cloud_ilastik_cache",
+    }
+}
+
 # Celery
 # ------------------------------------------------------------------------------
 if USE_TZ:
@@ -268,7 +278,8 @@ CELERY_TASK_SOFT_TIME_LIMIT = 60
 # CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
 CELERY_BEAT_SCHEDULE = {
-    "Submit pending tasks": {"task": "batch.tasks.submit_new_tasks", "schedule": timedelta(seconds=10)}
+    "Submit pending tasks": {"task": "batch.tasks.submit_new_tasks", "schedule": timedelta(seconds=10)},
+    "Check running jobs": {"task": "batch.tasks.check_running_jobs", "schedule": timedelta(seconds=60)},
 }
 # django-allauth
 # ------------------------------------------------------------------------------
