@@ -280,6 +280,7 @@ CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
 CELERY_BEAT_SCHEDULE = {
     "Submit pending tasks": {"task": "batch.tasks.submit_new_jobs", "schedule": timedelta(seconds=10)},
     "Check running jobs": {"task": "batch.tasks.check_running_jobs", "schedule": timedelta(seconds=60)},
+    "Cleanup done jobs": {"task": "batch.tasks.collect_done_jobs", "schedule": timedelta(seconds=300)},
 }
 # django-allauth
 # ------------------------------------------------------------------------------
