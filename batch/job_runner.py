@@ -47,7 +47,7 @@ class HPC:
         unicore_job = jobspec.run()
         return unicore_job.job_id
 
-    def check_status(self, job_id: str):
+    def check_status(self, job_id: str) -> models.JobStatus:
         job = self._env.get_job(job_id)
         unicore_status = job.properties["status"]
         own_status = self._OWN_STATUS_BY_UNICORE.get(unicore_status, None)
@@ -57,6 +57,10 @@ class HPC:
             own_status = models.JobStatus.running
 
         return own_status
+
+    def delete_job(self, job_id: str) -> None:
+        job = self._env.get_job(job_id)
+        job.delete()
 
     def get_token(self):
         return self._env.get_token()

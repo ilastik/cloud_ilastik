@@ -53,6 +53,7 @@ class JobStatus(enum.Enum):
     running = "running"
     done = "done"
     failed = "failed"
+    collected = "collected"
 
     @classmethod
     def choices(cls):

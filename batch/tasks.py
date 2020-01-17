@@ -51,3 +51,24 @@ def check_running_jobs():
 
     for job in jobs_to_check:
         check_for_failed_jobs.delay(token, job.pk, job.external_id)
+
+
+@celery_app.task()
+def delete_done_job(auth_code, job_id, external_id):
+    with contextlib.suppress(LockError), cache.lock(f"delete_task_{job_id}", timeout=30, blocking_timeout=0.001):
+        runner = job_runner.HPC(auth_code)
+        runner.delete_job(external_id)
+        models.Job.objects.filter(pk=job_id).update(status=models.JobStatus.collected.value)
+
+
+@celery_app.task()
+def collect_done_jobs():
+    jobs_to_collect = models.Job.objects.only("external_id").filter(
+        external_id__isnull=False, status=models.JobStatus.done.value
+    )
+
+    runner = job_runner.HPC()
+    token = runner.get_token()
+
+    for job in jobs_to_collect:
+        delete_done_job.delay(token, job.pk, job.external_id)
