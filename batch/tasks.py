@@ -33,11 +33,11 @@ def submit_new_jobs():
 
 
 @celery_app.task()
-def update_running_job_status(auth_code, job_id, external_id):
+def check_for_failed_jobs(auth_code, job_id, external_id):
     with contextlib.suppress(LockError), cache.lock(f"task_{job_id}", timeout=30, blocking_timeout=0.001):
         runner = job_runner.HPC(auth_code)
         status = runner.check_status(external_id)
-        if status != models.JobStatus.running:
+        if status == models.JobStatus.failed:
             models.Job.objects.filter(pk=job_id, status=models.JobStatus.running.value).update(status=status.value)
 
 
@@ -50,4 +50,4 @@ def check_running_jobs():
     token = runner.get_token()
 
     for job in jobs_to_check:
-        update_running_job_status.delay(token, job.pk, job.external_id)
+        check_for_failed_jobs.delay(token, job.pk, job.external_id)
