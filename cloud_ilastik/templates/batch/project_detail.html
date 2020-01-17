@@ -1,12 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'batch/base.html' %}
 {% load static %}
 
-{% block title %}Project {{ object.name }}{% endblock %}
-
-{% block content %}
-  <h2>Project {{ object.name }}</h2>
-
-  <h3>Jobs</h3>
+{% block project_content %}
   <ul id="jobs" data-fetch-url="{% url "job-list" object.pk %}"></ul>
 
   <script type="module">
@@ -43,47 +38,5 @@
     const root = document.getElementById('jobs');
     const app = h(JobList, {fetchUrl: root.dataset.fetchUrl, refreshInterval: 10000});
     render(app, root);
-  </script>
-
-  <form id="batch-job-form">
-    {% csrf_token %}
-    <fieldset>
-    <legend>Select datasets for batch job submission</legend>
-    {% for dataset in dataset_list %}
-      <div>
-        <input type="checkbox" id="{{ dataset.pk }}" name="{{ dataset.pk }}">
-        <label for="{{ dataset.pk }}"><a href="{{ dataset.url }}">{{ dataset.name }}</a></label>
-      </div>
-    {% endfor %}
-    </fieldset>
-    <input type="hidden" name="project" value="{{ object.pk }}">
-    <input type="hidden" name="submit-url" value="{% url "batch_job-list" %}">
-    <input type="submit" name="submit" value="Submit Batch Jobs">
-  </form>
-
-  <script>
-  (() => {
-    const form = document.querySelector('#batch-job-form');
-    const submitUrl = form.elements.namedItem('submit-url').value;
-    const project = form.elements.namedItem('project').value;
-    const csrfToken = form.elements.namedItem('csrfmiddlewaretoken').value;
-
-    async function submitJob() {
-      const datasets = Array.from(form.elements)
-              .filter(elem => elem.type === 'checkbox' && elem.checked)
-              .map(elem => parseInt(elem.name));
-
-      await fetch(submitUrl, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
-        body: JSON.stringify({'project': project, 'datasets': datasets}),
-      });
-    }
-
-    form.elements.namedItem('submit').addEventListener('click', (event) => {
-      event.preventDefault();
-      submitJob();
-    });
-  })();
   </script>
 {% endblock %}

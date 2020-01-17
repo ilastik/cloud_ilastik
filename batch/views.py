@@ -1,3 +1,6 @@
+from django import urls
+from django.contrib.auth import mixins
+from django.db.models import Q
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, response, permissions, generics
@@ -6,17 +9,43 @@ from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
 
 
-class ProjectListView(generic.ListView):
+class ProjectListView(mixins.LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
-        return models.Project.objects.filter(file__owner_id=self.request.user.id)
+        return models.Project.objects.filter(file__owner=self.request.user)
 
 
-class ProjectDetailView(generic.DetailView):
+class ProjectDetailView(mixins.LoginRequiredMixin, mixins.UserPassesTestMixin, generic.DetailView):
     model = models.Project
+
+    def test_func(self):
+        project = self.get_object()
+        return project.file and project.file.owner == self.request.user
+
+    def get_context_data(self, **kwargs):
+        nav_list_data = [
+            {"view_name": "batch:project-detail", "title": "Jobs"},
+            {"view_name": "batch:project-new-job", "title": "New Job"},
+        ]
+
+        nav_list = []
+        for d in nav_list_data:
+            url = urls.reverse(d["view_name"], args=[self.object.pk])
+            classes = ["nav-link"]
+            if url == self.request.path:
+                classes.append("active")
+            nav_list.append({"url": url, "class": " ".join(classes), "title": d["title"]})
+
+        return super().get_context_data(**kwargs, nav_list=nav_list)
+
+
+class ProjectNewJobView(ProjectDetailView):
+    model = models.Project
+    template_name_suffix = "_new_job"
 
     @property
     def _compatible_datasets(self):
         return datasets_models.Dataset.objects.filter(
+            Q(is_public=True) | Q(owner=self.request.user),
             size_z__gte=self.object.min_block_size_z,
             size_y__gte=self.object.min_block_size_y,
             size_x__gte=self.object.min_block_size_x,
@@ -24,7 +53,7 @@ class ProjectDetailView(generic.DetailView):
         )
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(dataset_list=self._compatible_datasets, **kwargs)
+        return super().get_context_data(**kwargs, dataset_list=self._compatible_datasets)
 
 
 class ProjectViewset(viewsets.ViewSet):
