@@ -1,0 +1,21 @@
+{% extends 'batch/base.html' %}
+
+{% block project_content %}
+  <form method="post">
+    {% csrf_token %}
+    <fieldset>
+      <legend>Select datasets for batch job submission</legend>
+      {% for dataset in dataset_list %}
+        <div class="form-check">
+          <input type="checkbox" id="dataset_{{ dataset.pk }}" name="dataset_{{ dataset.pk }}" class="form-check-input">
+          <label for="dataset_{{ dataset.pk }}" class="form-check-label">
+            <a href="{% url 'datasets:detail' dataset.pk %}">
+              {{ dataset.name }}
+            </a>
+          </label>
+        </div>
+      {% endfor %}
+    </fieldset>
+    <input type="submit" value="Submit Batch Jobs" class="btn btn-primary" role="button">
+  </form>
+{% endblock %}

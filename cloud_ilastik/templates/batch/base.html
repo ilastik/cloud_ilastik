@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Project {{ object.name }}{% endblock %}
+
+{% block content %}
+  <h2>Project {{ object.name }}</h2>
+
+  <ul class="nav nav-tabs nav-fill">
+    {% for nav_item in nav_list %}
+      <li class="nav-item">
+        <a class="{{ nav_item.class }}" href="{{ nav_item.url }}">{{ nav_item.title }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% block project_content %}
+  {% endblock %}
+{% endblock %}

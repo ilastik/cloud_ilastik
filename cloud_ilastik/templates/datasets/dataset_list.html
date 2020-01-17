@@ -23,7 +23,7 @@
       <tr>
         <th scope="row">{{ forloop.counter }}</th>
         <td><a href="{% url 'datasets:detail' dataset.pk %}">{{ dataset.name }}</a></td>
-        <td><a href="{{ dataset.neuroglancer_url }}" target="_blank" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></td>
+        <td><a href="{{ dataset.neuroglancer_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></td>
         <td>{{ dataset.size_t }}</td>
         <td>{{ dataset.size_z }}</td>
         <td>{{ dataset.size_t }}</td>

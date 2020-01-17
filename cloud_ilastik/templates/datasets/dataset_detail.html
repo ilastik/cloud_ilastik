@@ -3,7 +3,7 @@
 {% block title %}Dataset {{ object.name }}{% endblock %}
 
 {% block content %}
-  <h2>Dataset {{ object.name }} <a href="{{ object.neuroglancer_url }}" target="_blank" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></h2>
+  <h2>Dataset {{ object.name }} <a href="{{ object.neuroglancer_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a></h2>
 
   <div class="embed-responsive embed-responsive-1by1">
     <iframe title="{{ object.name }}" src="{{ object.neuroglancer_url }}" class="embed-responsive-item"></iframe>
