@@ -278,7 +278,7 @@ CELERY_TASK_SOFT_TIME_LIMIT = 60
 # CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
 CELERY_BEAT_SCHEDULE = {
-    "Submit pending tasks": {"task": "batch.tasks.submit_new_tasks", "schedule": timedelta(seconds=10)},
+    "Submit pending tasks": {"task": "batch.tasks.submit_new_jobs", "schedule": timedelta(seconds=10)},
     "Check running jobs": {"task": "batch.tasks.check_running_jobs", "schedule": timedelta(seconds=60)},
 }
 # django-allauth
