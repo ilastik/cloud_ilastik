@@ -5,14 +5,16 @@
   <table class="table" id="project-job-table" data-fetch-url="{% url "job-list" object.pk %}">
     <thead>
       <tr>
-        <th scope="col">ID</th>
+        <th scope="row">#</th>
         <th scope="col">Status</th>
         <th scope="col">Submission Time</th>
+        <th scope="col">Result</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js" integrity="sha256-4iQZ6BVL4qNKlQ27TExEhBN1HFPvAvAMbFavKKosSWQ=" crossorigin="anonymous"></script>
   <script type="module">
     import { Component, Fragment, h, render } from '{% static "js/preact/preact.module.js" %}';
 
@@ -20,14 +22,27 @@
       running: "table-info",
       done: "table-success",
       failed: "table-danger",
+      collected: "table-success",
     };
 
-    const JobItem = ({id, status, created_on, results}) => {
-      let url  = results[0] && results[0].neuroglancer_url;
+    const JobItem = ({index, id, status, created_on, results}) => {
+      const time = moment(created_on);
+      const resultUrl = results && results[0] && results[0].neuroglancer_url;
+      const resultElement = (resultUrl === undefined) ?
+              null :
+              h('a', {
+                href: resultUrl,
+                class: 'btn btn-outline-secondary btn-sm',
+                role: 'button',
+                target: '_blank',
+                rel: 'noopener',
+              }, 'Open in New Tab');
       return h('tr', {key: id, class: statusClasses[status] || ''},
-        h('th', {scope: 'row'}, h("a", {href: url}, id)),
-        h('td', null, status),
-        h('td', null, created_on));
+              h('th', {scope: 'row', title: id}, index + 1),
+              h('td', null, status),
+              h('td', {title: time.calendar()}, time.fromNow()),
+              h('td', null, resultElement),
+      );
     };
 
     class JobList extends Component {
@@ -51,7 +66,7 @@
       }
 
       render() {
-        const children = this.state.jobs.map(JobItem);
+        const children = this.state.jobs.map((job, index) => JobItem({...job, index}));
         return h(Fragment, null, ...children);
       }
     }
