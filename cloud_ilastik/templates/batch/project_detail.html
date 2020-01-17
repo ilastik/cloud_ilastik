@@ -2,12 +2,32 @@
 {% load static %}
 
 {% block project_content %}
-  <ul id="jobs" data-fetch-url="{% url "job-list" object.pk %}"></ul>
+  <table class="table" id="project-job-table" data-fetch-url="{% url "job-list" object.pk %}">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Status</th>
+        <th scope="col">Submission Time</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script type="module">
-    import { Component, h, render } from '{% static "js/preact/preact.module.js" %}';
+    import { Component, Fragment, h, render } from '{% static "js/preact/preact.module.js" %}';
 
-    const JobItem = ({id, status, created_on}) => h('li', {key: id}, `${id} ${status} ${created_on}`);
+    const statusClasses = {
+      running: "table-info",
+      done: "table-success",
+      failed: "table-danger",
+    };
+
+    const JobItem = ({id, status, created_on}) => {
+      return h('tr', {key: id, class: statusClasses[status] || ''},
+        h('th', {scope: 'row'}, id),
+        h('td', null, status),
+        h('td', null, created_on));
+    };
 
     class JobList extends Component {
       constructor(props) {
@@ -31,12 +51,13 @@
 
       render() {
         const children = this.state.jobs.map(JobItem);
-        return h('ul', null, ...children);
+        return h(Fragment, null, ...children);
       }
     }
 
-    const root = document.getElementById('jobs');
-    const app = h(JobList, {fetchUrl: root.dataset.fetchUrl, refreshInterval: 10000});
+    const table = document.getElementById('project-job-table');
+    const app = h(JobList, {fetchUrl: table.dataset.fetchUrl, refreshInterval: 10000});
+    const root = table.querySelector('tbody');
     render(app, root);
   </script>
 {% endblock %}
