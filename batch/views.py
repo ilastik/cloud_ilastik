@@ -1,12 +1,23 @@
 from django import urls
 from django.contrib.auth import mixins
 from django.db.models import Q
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, response, permissions, generics
 
 from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
+
+
+def compatible_datasets(*, project, owner):
+    return datasets_models.Dataset.objects.filter(
+        Q(is_public=True) | Q(owner=owner),
+        size_z__gte=project.min_block_size_z,
+        size_y__gte=project.min_block_size_y,
+        size_x__gte=project.min_block_size_x,
+        size_c=project.num_channels,
+    )
 
 
 class ProjectListView(mixins.LoginRequiredMixin, generic.ListView):
@@ -22,38 +33,53 @@ class ProjectDetailView(mixins.LoginRequiredMixin, mixins.UserPassesTestMixin, g
         return project.file and project.file.owner == self.request.user
 
     def get_context_data(self, **kwargs):
-        nav_list_data = [
+        return super().get_context_data(nav_list=self._nav_list, **kwargs)
+
+    @property
+    def _nav_list(self):
+        data = [
             {"view_name": "batch:project-detail", "title": "Jobs"},
             {"view_name": "batch:project-new-job", "title": "New Job"},
         ]
 
-        nav_list = []
-        for d in nav_list_data:
+        result = []
+        for d in data:
             url = urls.reverse(d["view_name"], args=[self.object.pk])
             classes = ["nav-link"]
             if url == self.request.path:
                 classes.append("active")
-            nav_list.append({"url": url, "class": " ".join(classes), "title": d["title"]})
+            result.append({"url": url, "class": " ".join(classes), "title": d["title"]})
 
-        return super().get_context_data(**kwargs, nav_list=nav_list)
+        return result
 
 
 class ProjectNewJobView(ProjectDetailView):
-    model = models.Project
     template_name_suffix = "_new_job"
 
-    @property
-    def _compatible_datasets(self):
-        return datasets_models.Dataset.objects.filter(
-            Q(is_public=True) | Q(owner=self.request.user),
-            size_z__gte=self.object.min_block_size_z,
-            size_y__gte=self.object.min_block_size_y,
-            size_x__gte=self.object.min_block_size_x,
-            size_c=self.object.num_channels,
-        )
-
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs, dataset_list=self._compatible_datasets)
+        dataset_list = compatible_datasets(project=self.object, owner=self.request.user)
+        return super().get_context_data(dataset_list=dataset_list, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        dataset_prefix = "dataset_"
+        dataset_ids = []
+
+        for name in self.request.POST:
+            if not name.startswith(dataset_prefix):
+                continue
+            try:
+                dataset_ids.append(int(name[len(dataset_prefix):]))
+            except ValueError:
+                return HttpResponse(status=400)
+
+        project = self.get_object()
+
+        # TODO: Ensure that dataset IDs form the strict subset of compatible_datasets.
+        datasets = compatible_datasets(project=project, owner=self.request.user).filter(id__in=dataset_ids)
+        jobs = [models.Job(owner=self.request.user, project=project, raw_data=ds) for ds in datasets]
+        models.Job.objects.bulk_create(jobs)
+
+        return HttpResponseRedirect(urls.reverse("batch:project-detail", args=[project.pk]))
 
 
 class ProjectViewset(viewsets.ViewSet):
