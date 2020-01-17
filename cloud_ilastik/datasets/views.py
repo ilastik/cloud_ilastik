@@ -10,7 +10,7 @@ class ListView(generic.ListView):
         query = Q(is_public=True)
         if not self.request.user.is_anonymous:
             query |= Q(owner=self.request.user)
-        return Dataset.objects.filter(query)
+        return Dataset.objects.filter(query).order_by("-created_on")
 
 
 class DetailView(mixins.UserPassesTestMixin, generic.DetailView):

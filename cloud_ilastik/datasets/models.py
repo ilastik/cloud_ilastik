@@ -48,6 +48,7 @@ class Dataset(models.Model):
     job = models.ForeignKey(batch_models.Job, on_delete=models.SET_NULL, null=True, blank=True, default=None)
     owner = models.ForeignKey(files_models.User, on_delete=models.SET_NULL, null=True)
     is_public = models.BooleanField(default=False)
+    created_on = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.owner and self.job:
