@@ -291,3 +291,12 @@ SOCIALACCOUNT_PROVIDERS = {"hbp_oauth2": {"SCOPE": ["offline_access", "profile"]
 TRAINING_API_URL = "https://web.ilastik.org/training/api/"
 SWIFT_PREFIX = env("SWIFT_PREFIX", default="https://web.ilastik.org/ngdata/")
 HPC_JOB_RESULT_ENDPOINT = "https://web.ilastik.org/v1/batch/jobs/external"
+
+HBP_REFRESH_TOKEN = env("HBP_REFRESH_TOKEN", default=None)
+HBP_APP_ID = env("HBP_APP_ID", default=None)
+HBP_APP_SECRET = env("HBP_APP_SECRET", default=None)
+HPC_PYTHON_EXECUTABLE = env("HBP_PYTHON_EXECUTABLE", default=None)
+HPC_ILASTIK_PATH = env("HBP_ILASTIK_PATH", default=None)
+
+S3_KEY = env("S3_KEY", default=None)
+S3_SECRET = env("S3_SECRET", default=None)
