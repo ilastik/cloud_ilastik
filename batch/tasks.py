@@ -1,7 +1,10 @@
 import logging
+import contextlib
 
 from config import celery_app
 from pathlib import Path
+from django.core.cache import cache
+from redis.exceptions import LockError
 
 from . import models, job_runner
 
@@ -9,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def submit_new_tasks():
+def submit_new_jobs():
     """Submit newly created tasks"""
     jobs_to_submit = models.Job.objects.only("project__file", "raw_data__url").filter(
         status=models.JobStatus.created.value
@@ -27,3 +30,24 @@ def submit_new_tasks():
             job.external_id = external_id
             job.status = models.JobStatus.running.value
             job.save()
+
+
+@celery_app.task()
+def update_running_job_status(auth_code, job_id, external_id):
+    with contextlib.suppress(LockError), cache.lock(f"task_{job_id}", timeout=30, blocking_timeout=0.001):
+        runner = job_runner.HPC(auth_code)
+        status = runner.check_status(external_id)
+        if status != models.JobStatus.running:
+            models.Job.objects.filter(pk=job_id, status=models.JobStatus.running.value).update(status=status.value)
+
+
+@celery_app.task()
+def check_running_jobs():
+    jobs_to_check = models.Job.objects.only("external_id").filter(
+        external_id__isnull=False, status=models.JobStatus.running.value
+    )
+    runner = job_runner.HPC()
+    token = runner.get_token()
+
+    for job in jobs_to_check:
+        update_running_job_status.delay(token, job.pk, job.external_id)

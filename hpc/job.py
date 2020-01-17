@@ -1,48 +1,50 @@
 import pyunicore.client as unicore_client
-from typing import Union
-import json, time, os
+import json
+import time
+import os
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
-import json
 import jwt
 import requests
 from numbers import Number
+from urllib.parse import urljoin
+
 
 class JobResources:
     def __init__(
         self,
         *,
         Memory: Optional[str] = None,
-        Runtime: int = 60 * 5, #seconds
+        Runtime: int = 60 * 5,  # seconds
         CPUs: Optional[int] = None,
         Nodes: Optional[int] = None,
         CPUsPerNode: Optional[int] = None,
-        Reservation: Optional[str] = None
+        Reservation: Optional[str] = None,
     ):
-        self.data = {
-            'Runtime': Runtime
-        }
+        self.data = {"Runtime": Runtime}
         if Memory:
-            self.data['Memory'] = Memory
+            self.data["Memory"] = Memory
         if CPUs:
-            self.data['CPUs'] = CPUs
+            self.data["CPUs"] = CPUs
         if Nodes:
-            self.data['Nodes'] = Nodes
+            self.data["Nodes"] = Nodes
         if CPUsPerNode:
-            self.data['CPUsPerNode'] = CPUsPerNode
+            self.data["CPUsPerNode"] = CPUsPerNode
         if Reservation:
-            self.data['Reservation'] = Reservation
+            self.data["Reservation"] = Reservation
 
     def to_dict(self):
         return self.data.copy()
 
+
 class JobImport:
-    def __init__(self, From:str, To:str):
+    def __init__(self, From: str, To: str):
         self.From = From
         self.To = To
 
     def to_dict(self) -> Dict:
         return self.__dict__.copy()
+
 
 class JobSpec:
     def __init__(
@@ -52,73 +54,88 @@ class JobSpec:
         Arguments: Optional[List[str]] = None,
         Environment: Dict[str, str] = None,
         Exports: Optional[List[str]] = None,
-        Resources: Optional[JobResources]  = None,
-        Imports: Optional[JobImport] = None
+        Resources: Optional[JobResources] = None,
+        Imports: Optional[JobImport] = None,
     ):
-        self.data = {
-            'Executable': Executable,
-            'Resources': (Resources or JobResources()).to_dict(),
-        }
+        self.data = {"Executable": Executable, "Resources": (Resources or JobResources()).to_dict()}
         if Arguments:
-            self.data['Arguments'] = Arguments
+            self.data["Arguments"] = Arguments
         if Environment:
-            self.data['Environment'] = Environment
+            self.data["Environment"] = Environment
         if Exports:
-            self.data['Exports'] = Exports
+            self.data["Exports"] = Exports
         if Resources:
-            self.data['Resources'] = Resources.to_dict()
+            self.data["Resources"] = Resources.to_dict()
         if Imports:
-            self.data['Imports'] = [imp.to_dict() for imp in Imports]
+            self.data["Imports"] = [imp.to_dict() for imp in Imports]
 
     def to_dict(self):
         return self.data.copy()
 
 
 class HpcEnvironment:
+    _site = None
+
     def __init__(
         self,
         *,
         HBP_REFRESH_TOKEN: Optional[str] = None,
-        HBP_APP_ID : Optional[str] = None,
-        HBP_APP_SECRET : Optional[str] = None,
-
-        HPC_PYTHON_EXECUTABLE : Optional[str] = None,
-        HPC_ILASTIK_PATH : Optional[str] = None,
-
-        S3_KEY : Optional[str] = None,
-        S3_SECRET : Optional[str] = None
+        HBP_APP_ID: Optional[str] = None,
+        HBP_APP_SECRET: Optional[str] = None,
+        HPC_PYTHON_EXECUTABLE: Optional[str] = None,
+        HPC_ILASTIK_PATH: Optional[str] = None,
+        S3_KEY: Optional[str] = None,
+        S3_SECRET: Optional[str] = None,
+        access_token: Optional[str] = None,
     ):
-        self.access_token = None
-        self.HBP_REFRESH_TOKEN = HBP_REFRESH_TOKEN or os.environ['HBP_REFRESH_TOKEN']
-        self.HBP_APP_ID = HBP_APP_ID or os.environ['HBP_APP_ID']
-        self.HBP_APP_SECRET = HBP_APP_SECRET or os.environ['HBP_APP_SECRET']
+        self.access_token = access_token
+        self.HBP_REFRESH_TOKEN = HBP_REFRESH_TOKEN or os.environ["HBP_REFRESH_TOKEN"]
+        self.HBP_APP_ID = HBP_APP_ID or os.environ["HBP_APP_ID"]
+        self.HBP_APP_SECRET = HBP_APP_SECRET or os.environ["HBP_APP_SECRET"]
 
-        self.HPC_PYTHON_EXECUTABLE = HPC_PYTHON_EXECUTABLE or os.environ['HPC_PYTHON_EXECUTABLE']
-        self.HPC_ILASTIK_PATH = HPC_ILASTIK_PATH or os.environ['HPC_ILASTIK_PATH']
+        self.HPC_PYTHON_EXECUTABLE = HPC_PYTHON_EXECUTABLE or os.environ["HPC_PYTHON_EXECUTABLE"]
+        self.HPC_ILASTIK_PATH = HPC_ILASTIK_PATH or os.environ["HPC_ILASTIK_PATH"]
 
-        self.S3_KEY = S3_KEY or os.environ['S3_KEY']
-        self.S3_SECRET = S3_SECRET or os.environ['S3_SECRET']
+        self.S3_KEY = S3_KEY or os.environ["S3_KEY"]
+        self.S3_SECRET = S3_SECRET or os.environ["S3_SECRET"]
 
     def token_is_valid(self):
         if self.access_token is None:
             return False
-        token = json.loads(jwt.utils.base64url_decode(self.access_token.split('.')[1]).decode('ascii'))
-        if token['exp'] < time.time() - (15 * 60):
+        token = json.loads(jwt.utils.base64url_decode(self.access_token.split(".")[1]).decode("ascii"))
+        if token["exp"] < time.time() - (15 * 60):
             return False
         return True
 
     def get_token(self):
         if not self.token_is_valid():
-            resp = requests.post("https://services.humanbrainproject.eu/oidc/token", data={
-                "refresh_token": self.HBP_REFRESH_TOKEN,
-                "client_id": self.HBP_APP_ID,
-                "client_secret": self.HBP_APP_SECRET,
-                "grant_type": "refresh_token"
-            })
-            print("Refreshed token!")
-            #FIXME: do we need to verify the token's signature?
-            self.access_token = resp.json()['access_token']
+            resp = requests.post(
+                "https://services.humanbrainproject.eu/oidc/token",
+                data={
+                    "refresh_token": self.HBP_REFRESH_TOKEN,
+                    "client_id": self.HBP_APP_ID,
+                    "client_secret": self.HBP_APP_SECRET,
+                    "grant_type": "refresh_token",
+                },
+            )
+            self.access_token = resp.json()["access_token"]
         return self.access_token
+
+    def get_jobs(self):
+        site = self._get_site()
+        return site.transport.get(url=site.site_urls["jobs"])
+
+    def get_job(self, job_id: str):
+        site = self._get_site()
+        jobs_url = site.site_urls["jobs"]
+        return unicore_client.Job(site.transport, job_url=urljoin(f"{jobs_url}/", job_id))
+
+    def _get_site(self):
+        if self._site is None:
+            tr = unicore_client.Transport(self.get_token())
+            registry = unicore_client.Registry(tr, unicore_client._HBP_REGISTRY_URL)
+            self._site = registry.site("DAINT-CSCS")
+        return self._site
 
 
 class IlastikJobSpec(JobSpec):
@@ -131,33 +148,33 @@ class IlastikJobSpec(JobSpec):
         result_endpoint: str,
         Resources: JobResources,
         block_size: int = 1024,
-        export_dtype: str = 'uint8',
-        pipeline_result_drange : Tuple[Number, Number] = (0.1, 1.0),
-        export_drange : Tuple[Number, Number] = (0, 255)
+        export_dtype: str = "uint8",
+        pipeline_result_drange: Tuple[Number, Number] = (0.1, 1.0),
+        export_drange: Tuple[Number, Number] = (0, 255),
     ):
         self.hpc_environment = hpc_environment or HpcEnvironment()
         self.inputs = [
             ilp_project.as_posix(),
-            Path(__file__).parent.joinpath('remote_scripts/run_ilastik.sh').as_posix(),
-            Path(__file__).parent.joinpath('remote_scripts/update_status.py').as_posix(),
-            Path(__file__).parent.joinpath('remote_scripts/upload_dir.py').as_posix()
+            Path(__file__).parent.joinpath("remote_scripts/run_ilastik.sh").as_posix(),
+            Path(__file__).parent.joinpath("remote_scripts/update_status.py").as_posix(),
+            Path(__file__).parent.joinpath("remote_scripts/upload_dir.py").as_posix(),
         ]
         super().__init__(
-            Executable='./run_ilastik.sh',
-            Environment={ #These variables are expected bu the run_ilastik.sh script
-                'ILASTIK_PROJECT_FILE': ilp_project.name,
-                'HPC_PYTHON_EXECUTABLE': self.hpc_environment.HPC_PYTHON_EXECUTABLE,
-                'HPC_ILASTIK_PATH': self.hpc_environment.HPC_ILASTIK_PATH,
-                'ILASTIK_BLOCK_SIZE': block_size,
-                'S3_KEY': self.hpc_environment.S3_KEY,
-                'S3_SECRET': self.hpc_environment.S3_SECRET,
-                'ILASTIK_JOB_RESULT_ENDPOINT': result_endpoint,
-                'ILASTIK_EXPORT_DTYPE': export_dtype,
-                'ILASTIK_EXPORT_DRANGE': str(export_drange),
-                'ILASTIK_PIPELINE_RESULT_DRANGE': str(pipeline_result_drange)
+            Executable="./run_ilastik.sh",
+            Environment={  # These variables are expected bu the run_ilastik.sh script
+                "ILASTIK_PROJECT_FILE": ilp_project.name,
+                "HPC_PYTHON_EXECUTABLE": self.hpc_environment.HPC_PYTHON_EXECUTABLE,
+                "HPC_ILASTIK_PATH": self.hpc_environment.HPC_ILASTIK_PATH,
+                "ILASTIK_BLOCK_SIZE": block_size,
+                "S3_KEY": self.hpc_environment.S3_KEY,
+                "S3_SECRET": self.hpc_environment.S3_SECRET,
+                "ILASTIK_JOB_RESULT_ENDPOINT": result_endpoint,
+                "ILASTIK_EXPORT_DTYPE": export_dtype,
+                "ILASTIK_EXPORT_DRANGE": str(export_drange),
+                "ILASTIK_PIPELINE_RESULT_DRANGE": str(pipeline_result_drange),
             },
-            Imports=[JobImport(From=raw_data_url, To='raw_data.n5.tar')], #FIXME: allow for non-n5
-            Resources=Resources
+            Imports=[JobImport(From=raw_data_url, To="raw_data.n5.tar")],  # FIXME: allow for non-n5
+            Resources=Resources,
         )
 
     def __repr__(self) -> str:
@@ -166,10 +183,5 @@ class IlastikJobSpec(JobSpec):
         return json.dumps(data, indent=4)
 
     def run(self):
-        tr = unicore_client.Transport(self.hpc_environment.get_token())
-        registry = unicore_client.Registry(tr, unicore_client._HBP_REGISTRY_URL)
-        site = registry.site('DAINT-CSCS')
-        return site.new_job(
-            job_description=self.to_dict(),
-            inputs=self.inputs
-        )
+        site = self.hpc_environment._get_site()
+        return site.new_job(job_description=self.to_dict(), inputs=self.inputs)
