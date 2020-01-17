@@ -22,9 +22,10 @@
       failed: "table-danger",
     };
 
-    const JobItem = ({id, status, created_on}) => {
+    const JobItem = ({id, status, created_on, results}) => {
+      let url  = results[0] && results[0].neuroglancer_url;
       return h('tr', {key: id, class: statusClasses[status] || ''},
-        h('th', {scope: 'row'}, id),
+        h('th', {scope: 'row'}, h("a", {href: url}, id)),
         h('td', null, status),
         h('td', null, created_on));
     };

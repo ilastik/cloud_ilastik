@@ -15,10 +15,18 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
         fields = ["id", "html_url", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
 
 
+class ResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = datasets_models.Dataset
+        fields = ["neuroglancer_url"]
+
+
 class JobSerializer(serializers.HyperlinkedModelSerializer):
+    results = ResultSerializer(many=True)
+
     class Meta:
         model = models.Job
-        fields = ["id", "status", "created_on"]
+        fields = ["id", "status", "results", "created_on"]
 
 
 class BatchJob(serializers.Serializer):
