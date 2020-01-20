@@ -37,6 +37,8 @@ class _Color:
 
     @classmethod
     def get_distinct_colors(cls, num_colors: int) -> List["Color"]:
+        if num_colors == 1:
+            return [cls(255, 255, 255)]
         return [cls(*rgb) for rgb in cls.VISUALY_DISTINCT_COLORS_RGB[:num_colors]]
 
     def __repr__(self):
