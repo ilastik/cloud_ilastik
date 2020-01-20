@@ -1,7 +1,10 @@
+from typing import Optional
+
 from rest_framework import serializers
 
 from . import models
 import cloud_ilastik.datasets.models as datasets_models
+from cloud_ilastik.datasets import neuroglancer as ng
 
 
 __all__ = ["ProjectSerializer"]
@@ -22,11 +25,25 @@ class ResultSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.HyperlinkedModelSerializer):
-    results = ResultSerializer(many=True)
+    viewer_url = serializers.SerializerMethodField()
+
+    def get_viewer_url(self, obj: models.Job) -> Optional[str]:
+        result = obj.results.first()
+
+        if not (result and obj.raw_data):
+            return None
+
+        return ng.viewer_url(
+            [
+                ng.Layer(obj.raw_data.url, obj.raw_data.size_c, role="raw_data"),
+                ng.Layer(result.url, result.size_c, role="results", selected=True),
+            ],
+            show_control_panel=True,
+        )
 
     class Meta:
         model = models.Job
-        fields = ["id", "status", "results", "created_on"]
+        fields = ["id", "status", "created_on", "viewer_url"]
 
 
 class BatchJob(serializers.Serializer):
