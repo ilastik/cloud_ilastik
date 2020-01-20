@@ -1,4 +1,5 @@
 import json
+import enum
 import urllib.parse
 
 from typing import List
@@ -8,22 +9,38 @@ from django.conf import settings
 __all__ = ["viewer_url"]
 
 
+@enum.unique
+class ColorMode(enum.Enum):
+    ILASTIK = "ilastik"
+    RGB = "rgb"
+    GRAYSCALE = "grayscale"
+
+
 class Layer:
     url: str
     num_channels: int
     role: str
     selected: bool
+    color_mode: ColorMode
 
-    def __init__(self, url: str, num_channels: int, role: str = "data", selected: bool = False):
+    def __init__(
+        self,
+        url: str,
+        num_channels: int,
+        role: str = "data",
+        selected: bool = False,
+        color_mode: ColorMode = ColorMode.RGB,
+    ):
         self.url = url
         self.num_channels = num_channels
         self.role = role
         self.selected = selected
+        self.color_mode = color_mode
 
 
 class _Color:
     # Taken from volumina.colortables
-    VISUALY_DISTINCT_COLORS_RGB = [
+    COLORS_ILASTIK = [
         (255, 225, 25),  # yellow
         (0, 130, 200),  # blue
         (230, 25, 75),  # red
@@ -41,6 +58,10 @@ class _Color:
         (128, 128, 128),  # gray
     ]
 
+    COLORS_RGB = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]  # red  # green  # blue
+
+    COLORS_GRAYSCALE = [(255, 255, 255)]  # red
+
     def __init__(self, r: int, g: int, b: int):
         self.r = r
         self.g = g
@@ -50,10 +71,14 @@ class _Color:
         return f"vec3({self.r}, {self.g}, {self.b})"
 
     @classmethod
-    def get_distinct_colors(cls, num_colors: int) -> List["Color"]:
-        if num_colors == 1:
-            return [cls(255, 255, 255)]
-        return [cls(*rgb) for rgb in cls.VISUALY_DISTINCT_COLORS_RGB[:num_colors]]
+    def get_colors(cls, num_colors: int, mode: ColorMode) -> List["Color"]:
+        color_table = {
+            ColorMode.GRAYSCALE: cls.COLORS_GRAYSCALE,
+            ColorMode.RGB: cls.COLORS_RGB,
+            ColorMode.ILASTIK: cls.COLORS_ILASTIK,
+        }[mode]
+
+        return [cls(*rgb) for rgb in color_table[:num_colors]]
 
     def __repr__(self):
         return f"<Color ({self.r},{self.g},{self.b})>"
@@ -93,7 +118,7 @@ def viewer_url(layers: List[Layer], show_control_panel=False) -> str:
                 "tab": "source",
                 "blend": "default",
                 "name": layer.role,
-                "shader": _create_fragment_shader(_Color.get_distinct_colors(layer.num_channels)),
+                "shader": _create_fragment_shader(_Color.get_colors(layer.num_channels, layer.color_mode)),
             }
         )
 

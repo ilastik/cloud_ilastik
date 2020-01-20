@@ -65,9 +65,18 @@ class Dataset(models.Model):
     def tar_url(self):
         return TAR_URL_RE.sub(".tar", self.url)
 
+    def as_viewer_layer(self):
+        if self.size_c == 1:
+            mode = ng.ColorMode.GRAYSCALE
+        elif self.size_c < 4:
+            mode = ng.ColorMode.RGB
+        else:
+            mode = ng.ColorMode.ILASTIK
+        return ng.Layer(self.url, self.size_c, color_mode=mode, role="data")
+
     @property
     def neuroglancer_url(self):
-        return ng.viewer_url([ng.Layer(self.url, self.size_c)])
+        return ng.viewer_url([self.as_viewer_layer()])
 
     def __str__(self):
         return f"{self.name} {self.sizes} <{self.url}>"
