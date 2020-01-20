@@ -19,6 +19,11 @@ def not_negative(value):
         raise ValidationError(_("%(value)s should be positive or 0"), params={"value": value})
 
 
+class ProjectManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().select_related("file")
+
+
 class Project(models.Model):
     """
     User project
@@ -30,6 +35,8 @@ class Project(models.Model):
     min_block_size_z = models.IntegerField(default=0, validators=[not_negative])
     min_block_size_y = models.IntegerField(validators=[not_negative])
     min_block_size_x = models.IntegerField(validators=[not_negative])
+
+    objects = ProjectManager()
 
     @property
     def name(self):

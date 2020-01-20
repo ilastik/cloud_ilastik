@@ -20,7 +20,7 @@ class ProjectDetailView(mixins.LoginRequiredMixin, mixins.UserPassesTestMixin, g
 
     def test_func(self):
         project = self.get_object()
-        return project.file and project.file.owner == self.request.user
+        return project.file and project.file.owner_id == self.request.user.id
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(nav_list=self._nav_list, **kwargs)
@@ -71,6 +71,7 @@ class ProjectNewJobView(ProjectDetailView):
             size_c=project.num_channels,
         )
 
+
 class ProjectViewset(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -94,7 +95,12 @@ class JobViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.JobSerializer
 
     def get_queryset(self):
-        return models.Job.objects.filter(project_id=self.kwargs["project_id"]).order_by("-created_on")
+        return (
+            models.Job.objects.select_related("raw_data", "project")
+            .prefetch_related("results")
+            .filter(project_id=self.kwargs["project_id"])
+            .order_by("-created_on")
+        )
 
 
 class BatchJobViewset(viewsets.ViewSet):
