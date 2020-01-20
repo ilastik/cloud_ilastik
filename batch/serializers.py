@@ -35,8 +35,8 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
 
         return ng.viewer_url(
             [
-                ng.Layer(obj.raw_data.url, obj.raw_data.size_c, role="raw_data"),
-                ng.Layer(result.url, result.size_c, role="results", selected=True),
+                obj.raw_data.as_viewer_layer(),
+                ng.Layer(result.url, result.size_c, role="results", selected=True, color_mode=ng.ColorMode.ILASTIK),
             ],
             show_control_panel=True,
         )
