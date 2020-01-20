@@ -8,7 +8,7 @@ __all__ = ["ProjectSerializer"]
 
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
-    html_url = serializers.HyperlinkedIdentityField("batch:project-detail")
+    html_url = serializers.HyperlinkedIdentityField("batch:project-new-job")
 
     class Meta:
         model = models.Project
