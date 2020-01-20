@@ -13,5 +13,5 @@ class JobAdmin(admin.ModelAdmin):
     list_display = ["id", "owner", "status", "project", "external_id", "created_on", "updated_on"]
     readonly_fields = ["owner", "project", "external_id", "created_on", "updated_on"]
     list_filter = ["status", "created_on"]
-    search_fields = ["owner__name"]
+    search_fields = ["id", "owner__username"]
     ordering = ["-created_on"]

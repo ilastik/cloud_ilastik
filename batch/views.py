@@ -10,16 +10,6 @@ from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
 
 
-def compatible_datasets(*, project, owner):
-    return datasets_models.Dataset.objects.filter(
-        Q(is_public=True) | Q(owner=owner),
-        size_z__gte=project.min_block_size_z,
-        size_y__gte=project.min_block_size_y,
-        size_x__gte=project.min_block_size_x,
-        size_c=project.num_channels,
-    )
-
-
 class ProjectListView(mixins.LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return models.Project.objects.filter(file__owner=self.request.user)
@@ -57,30 +47,29 @@ class ProjectNewJobView(ProjectDetailView):
     template_name_suffix = "_new_job"
 
     def get_context_data(self, **kwargs):
-        dataset_list = compatible_datasets(project=self.object, owner=self.request.user)
-        return super().get_context_data(dataset_list=dataset_list, **kwargs)
+        return super().get_context_data(dataset_list=self._compatible_datasets, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        dataset_prefix = "dataset_"
-        dataset_ids = []
-
-        for name in self.request.POST:
-            if not name.startswith(dataset_prefix):
-                continue
-            try:
-                dataset_ids.append(int(name[len(dataset_prefix):]))
-            except ValueError:
-                return HttpResponse(status=400)
-
         project = self.get_object()
 
-        # TODO: Ensure that dataset IDs form the strict subset of compatible_datasets.
-        datasets = compatible_datasets(project=project, owner=self.request.user).filter(id__in=dataset_ids)
-        jobs = [models.Job(owner=self.request.user, project=project, raw_data=ds) for ds in datasets]
-        models.Job.objects.bulk_create(jobs)
+        try:
+            dataset = self._compatible_datasets.get(pk=int(self.request.POST["dataset"]))
+        except (KeyError, ValueError, datasets_models.Dataset.DoesNotExist):
+            return HttpResponse(status=400)
 
+        models.Job.objects.create(project=project, owner=self.request.user, raw_data=dataset)
         return HttpResponseRedirect(urls.reverse("batch:project-detail", args=[project.pk]))
 
+    @property
+    def _compatible_datasets(self):
+        project = self.get_object()
+        return datasets_models.Dataset.objects.filter(
+            Q(is_public=True) | Q(owner=self.request.user),
+            size_z__gte=project.min_block_size_z,
+            size_y__gte=project.min_block_size_y,
+            size_x__gte=project.min_block_size_x,
+            size_c=project.num_channels,
+        )
 
 class ProjectViewset(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
