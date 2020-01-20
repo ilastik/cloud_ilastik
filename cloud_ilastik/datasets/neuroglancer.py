@@ -1,6 +1,5 @@
 import json
 import urllib.parse
-import dataclasses
 
 from typing import List
 
@@ -9,12 +8,17 @@ from django.conf import settings
 __all__ = ["viewer_url"]
 
 
-@dataclasses.dataclass
 class Layer:
     url: str
     num_channels: int
-    role: str = "data"
-    selected: bool = False
+    role: str
+    selected: bool
+
+    def __init__(self, url: str, num_channels: int, role: str = "data", selected: bool = False):
+        self.url = url
+        self.num_channels = num_channels
+        self.role = role
+        self.selected = selected
 
 
 class _Color:
