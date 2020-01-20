@@ -6,7 +6,7 @@ from django.db import models
 import batch.models as batch_models
 import files.models as files_models
 
-from .neuroglancer import viewer_url
+from . import neuroglancer as ng
 
 TAR_URL_RE = re.compile("/data$")
 
@@ -67,7 +67,7 @@ class Dataset(models.Model):
 
     @property
     def neuroglancer_url(self):
-        return viewer_url(self.url, self.size_c)
+        return ng.viewer_url([ng.Layer(self.url, self.size_c)])
 
     def __str__(self):
         return f"{self.name} {self.sizes} <{self.url}>"

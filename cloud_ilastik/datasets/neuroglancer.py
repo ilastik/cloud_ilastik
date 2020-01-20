@@ -1,10 +1,20 @@
 import json
 import urllib.parse
+import dataclasses
+
 from typing import List
 
 from django.conf import settings
 
 __all__ = ["viewer_url"]
+
+
+@dataclasses.dataclass
+class Layer:
+    url: str
+    num_channels: int
+    role: str = "data"
+    selected: bool = False
 
 
 class _Color:
@@ -65,24 +75,36 @@ def _create_fragment_shader(channel_colors: List[_Color]):
     return "\n".join(shader_lines)
 
 
-def viewer_url(url: str, num_channels: int) -> str:
+def viewer_url(layers: List[Layer], show_control_panel=False) -> str:
     ng_url = "https://web.ilastik.org/viewer/#!"
-    data_url = url.replace(settings.SWIFT_PREFIX, "https://web.ilastik.org/data/")
-    ng_config = {
-        "dimensions": {"c": [1e-9, "m"], "x": [1e-9, "m"], "y": [1e-9, "m"]},
-        "crossSectionScale": 1,
-        "projectionScale": 8192,
-        "layers": [
+    ng_layers = []
+    selected_layer = None
+
+    for layer in layers:
+        data_url = layer.url.replace(settings.SWIFT_PREFIX, "https://web.ilastik.org/data/")
+        ng_layers.append(
             {
                 "type": "image",
                 "source": {"url": f"n5://{data_url}"},
                 "tab": "source",
                 "blend": "default",
-                "name": "exported_data",
-                "shader": _create_fragment_shader(_Color.get_distinct_colors(num_channels)),
+                "name": layer.role,
+                "shader": _create_fragment_shader(_Color.get_distinct_colors(layer.num_channels)),
             }
-        ],
-        "selectedLayer": {"layer": "exported_data"},
+        )
+
+        if layer.selected:
+            selected_layer = layer.role
+
+    if selected_layer is None and layers:
+        selected_layer = layers[-1].role
+
+    ng_config = {
+        "dimensions": {"c": [1e-9, "m"], "x": [1e-9, "m"], "y": [1e-9, "m"]},
+        "crossSectionScale": 1,
+        "projectionScale": 8192,
+        "layers": ng_layers,
+        "selectedLayer": {"layer": selected_layer, "visible": show_control_panel},
         "layout": "xy",  # TODO: Fix layout detection based on dataset properties
     }
     quoted_config = urllib.parse.quote(json.dumps(ng_config))
