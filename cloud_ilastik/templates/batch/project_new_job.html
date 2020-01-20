@@ -1,7 +1,7 @@
 {% extends 'batch/base.html' %}
 
 {% block project_content %}
-  <form method="post">
+  <form method="post" class="new-job">
     {% csrf_token %}
     <fieldset>
       <legend>Select datasets for batch job submission</legend>
@@ -13,13 +13,20 @@
                  value="{{ dataset.pk }}"
                  class="form-check-input">
           <label for="dataset-{{ dataset.pk }}" class="form-check-label">
-            <a href="{% url 'datasets:detail' dataset.pk %}">
-              {{ dataset.name }}
-            </a>
+            <a href="{% url 'datasets:detail' dataset.pk %}">{{ dataset.name }}</a>
+            <a href="{{ dataset.neuroglancer_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" role="button">Open in New Tab</a>
           </label>
         </div>
       {% endfor %}
     </fieldset>
     <input type="submit" value="Submit Batch Jobs" class="btn btn-primary" role="button">
   </form>
+  <style>
+    form.new-job .form-check {
+      margin: 1em 0;
+    }
+    form.new-job a[role="button"] {
+      margin-left: 0.5em;
+    }
+  </style>
 {% endblock %}
