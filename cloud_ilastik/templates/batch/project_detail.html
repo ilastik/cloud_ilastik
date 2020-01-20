@@ -26,18 +26,18 @@
       collected: "table-success",
     };
 
-    const JobItem = ({index, id, status, created_on, results}) => {
+    const JobItem = ({index, id, status, created_on, viewer_url}) => {
       const time = moment(created_on);
-      const resultUrl = results && results[0] && results[0].neuroglancer_url;
-      const resultElement = (resultUrl === undefined) ?
-              null :
-              h('a', {
-                href: resultUrl,
-                class: 'btn btn-outline-secondary btn-sm',
-                role: 'button',
-                target: '_blank',
-                rel: 'noopener',
-              }, 'Open in New Tab');
+      let resultElement = null;
+      if (viewer_url) {
+        resultElement = h('a', {
+          href: viewer_url,
+          class: 'btn btn-outline-secondary btn-sm',
+          role: 'button',
+          target: '_blank',
+          rel: 'noopener',
+        }, 'Open in New Tab');
+      }
       return h('tr', {key: id, class: statusClasses[status] || ''},
               h('td', {scope: 'row'}, index + 1),
               h('td', null, id.slice(0, 6)),
