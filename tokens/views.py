@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.authtoken import models
 
 
-@login_required(login_url="/accounts/hbp_oauth2/login")
+@login_required()
 def show_token(request):
     token, _ = models.Token.objects.get_or_create(user=request.user)
 
