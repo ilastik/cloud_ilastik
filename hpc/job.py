@@ -56,6 +56,7 @@ class JobSpec:
         Exports: Optional[List[str]] = None,
         Resources: Optional[JobResources] = None,
         Imports: Optional[JobImport] = None,
+        Tags: Optional[List[str]] = None
     ):
         self.data = {"Executable": Executable, "Resources": (Resources or JobResources()).to_dict()}
         if Arguments:
@@ -68,6 +69,8 @@ class JobSpec:
             self.data["Resources"] = Resources.to_dict()
         if Imports:
             self.data["Imports"] = [imp.to_dict() for imp in Imports]
+        if Tags:
+            self.data["Tags"] = Tags
 
     def to_dict(self):
         return self.data.copy()
@@ -175,6 +178,7 @@ class IlastikJobSpec(JobSpec):
             },
             Imports=[JobImport(From=raw_data_url, To="raw_data.n5.tar")],  # FIXME: allow for non-n5
             Resources=Resources,
+            Tags=["ILASTIK"]
         )
 
     def __repr__(self) -> str:
