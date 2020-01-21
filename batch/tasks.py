@@ -18,18 +18,29 @@ def submit_new_jobs():
         status=models.JobStatus.created.value
     )
 
-    runner = job_runner.HPC()
-
     for job in jobs_to_submit:
-        project_path = Path(job.project.file.data.path)
+        _submit_new_job.delay(job.id, job.project.file.data.path, job.raw_data.tar_url)
+
+
+@celery_app.task(soft_time_limit=60, time_limit=90)
+def _submit_new_job(job_id, project_path, tar_url):
+    with contextlib.suppress(LockError), cache.lock(f"submit_job_{job_id}", timeout=90, blocking_timeout=0.001):
+        project_path = Path(project_path)
+        runner_cls = job_runner.get_job_runner_cls()
+        runner = runner_cls()
+
         try:
-            external_id = runner.run(project_path, job.raw_data.tar_url)
+            external_id = runner.run(project_path, tar_url)
         except Exception:
             logger.error("Failed to submit job", exc_info=1)
         else:
-            job.external_id = external_id
-            job.status = models.JobStatus.running.value
-            job.save()
+            updated = models.Job.objects.filter(pk=job_id, status=models.JobStatus.created.value).update(
+                status=models.JobStatus.running.value, external_id=external_id
+            )
+            if updated != 1:
+                logger.error(
+                    "Conflict job %s changed state during submission orphan external_id: %s", job_id, external_id
+                )
 
 
 @celery_app.task()

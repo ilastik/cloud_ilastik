@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from django.conf import settings
+from django.utils import module_loading
 
 import hpc
 
@@ -11,6 +12,10 @@ from . import models
 logger = logging.getLogger(__name__)
 
 _30_MINUTES = 30 * 60
+
+
+def get_job_runner_cls():
+    return module_loading.import_string(settings.JOB_RUNNER)
 
 
 class HPC:
