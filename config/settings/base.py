@@ -312,3 +312,5 @@ HPC_ILASTIK_PATH = env("HBP_ILASTIK_PATH", default=None)
 
 S3_KEY = env("S3_KEY", default=None)
 S3_SECRET = env("S3_SECRET", default=None)
+
+JOB_RUNNER = "batch.job_runner.HPC"

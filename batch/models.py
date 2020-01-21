@@ -56,6 +56,21 @@ class Project(models.Model):
 
 
 class JobStatus(enum.Enum):
+    """
+    State transition diagramm:
+
+                          +--->done+--->collected
+                          |
+    created+--->running+--+
+                          |
+                          +--->failed
+
+    created -> running: happens when we submit task to job runner
+    running -> done: should happen when task reports it's results back
+    running -> failed: task reports failure via rest
+    done -> collected: only successful tasks should be cleaned up
+    """
+
     created = "created"
     running = "running"
     done = "done"
