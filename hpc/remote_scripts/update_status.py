@@ -18,38 +18,35 @@ def parse_args():
         "endpoint", help="base URL for reporting the job status, without the job ID, with the trailing slash"
     )
     ap.add_argument("job", help="unicore job ID")
-    ap.add_argument("status", help="job status", choices="created running done failed".split())
     ap.add_argument(
         "--output",
+        required=True,
         metavar="DIR",
-        help="local, top-level N5 directory with results; required when status is 'done'",
+        help="local, top-level N5 directory with results",
         type=pathlib.Path,
     )
     ap.add_argument(
-        "--bucket", metavar="NAME", help="remote bucket name with the output contents; required when status is 'done'"
+        "--bucket",
+        required=True,
+        metavar="NAME",
+        help="remote bucket name with the output contents"
     )
-
     args = ap.parse_args()
-    if args.status == "done" and not all((args.output, args.bucket)):
-        ap.error("'--output' and '--bucket' are required when status is 'done'")
-
     return args
 
 
 def main():
     args = parse_args()
-    data = {"status": args.status}
 
-    if args.status == "done":
-        with open(args.output / "exported_data" / "attributes.json") as fd:
-            attrs = json.loads(fd.read())
-        data = {
-            **data,
-            "result_url": f"https://object.cscs.ch/v1/{ACCOUNT}/{args.bucket}/{args.output.name}/exported_data",
-            "name": args.output.name,
-            "dtype": attrs["dataType"],
-            **{f"size_{k}": v for k, v in zip(attrs["axes"], attrs["dimensions"])},
-        }
+    with open(args.output / "exported_data" / "attributes.json") as fd:
+        attrs = json.loads(fd.read())
+    data = {
+        "status": "done",
+        "result_url": f"https://object.cscs.ch/v1/{ACCOUNT}/{args.bucket}/{args.output.name}/exported_data",
+        "name": args.output.name,
+        "dtype": attrs["dataType"],
+        **{f"size_{k}": v for k, v in zip(attrs["axes"], attrs["dimensions"])},
+    }
 
     url = urllib.parse.urljoin(f"{args.endpoint}/", f"{args.job}/")
     print(f"Posting job report back to {url}")
@@ -57,6 +54,7 @@ def main():
     result = requests.put(url, json=data)
     print(f"Report response: {result.status_code}")
     print(result.text)
+    result.raise_for_status()
 
 
 if __name__ == "__main__":
