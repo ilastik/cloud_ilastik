@@ -5,10 +5,10 @@
   <table class="table" id="project-job-table" data-fetch-url="{% url "job-list" object.pk %}">
     <thead>
       <tr>
-        <th scope="row">#</th>
         <th scope="col">ID</th>
         <th scope="col">Status</th>
         <th scope="col">Submission Time</th>
+        <th scope="col">Running Time</th>
         <th scope="col">Result</th>
       </tr>
     </thead>
@@ -26,8 +26,9 @@
       collected: "table-success",
     };
 
-    const JobItem = ({index, id, status, created_on, viewer_url}) => {
-      const time = moment(created_on);
+    const JobItem = ({id, status, created_on, started_on, finished_on, viewer_url}) => {
+      const submissionTime = moment(created_on);
+
       let resultElement = null;
       if (viewer_url) {
         resultElement = h('a', {
@@ -38,11 +39,21 @@
           rel: 'noopener',
         }, 'Open in New Tab');
       }
+
+      let runningTimeElement = h('td', null);
+      if (started_on && finished_on) {
+        const startedTime = moment(started_on);
+        const finishedTime = moment(finished_on);
+        runningTimeElement = h('td',  {
+          title: `Started: ${startedTime}\nFinished: ${finishedTime}`,
+        }, finishedTime.from(startedTime, true));
+      }
+
       return h('tr', {key: id, class: statusClasses[status] || ''},
-              h('td', {scope: 'row'}, index + 1),
-              h('td', null, id.slice(0, 6)),
+              h('td', {title: id}, id.slice(0, 6)),
               h('td', null, status),
-              h('td', {title: time.calendar()}, time.fromNow()),
+              h('td', {title: submissionTime}, submissionTime.fromNow()),
+              runningTimeElement,
               h('td', null, resultElement),
       );
     };
@@ -68,7 +79,7 @@
       }
 
       render() {
-        const children = this.state.jobs.map((job, index) => JobItem({...job, index}));
+        const children = this.state.jobs.map(JobItem);
         return h(Fragment, null, ...children);
       }
     }

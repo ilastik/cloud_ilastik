@@ -1,5 +1,6 @@
-import uuid
+import datetime
 import enum
+import uuid
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -81,6 +82,14 @@ class JobStatus(enum.Enum):
     def choices(cls):
         return [(key.value, key.name) for key in cls]
 
+    @property
+    def is_started(self):
+        return self == self.running
+
+    @property
+    def is_finished(self):
+        return self == self.done or self == self.failed
+
 
 class Job(models.Model):
     """
@@ -93,6 +102,8 @@ class Job(models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, editable=False)
     created_on = models.DateTimeField(auto_now_add=True, editable=False)
     updated_on = models.DateTimeField(auto_now=True, editable=False)
+    started_on = models.DateTimeField(editable=False, null=True, blank=True)
+    finished_on = models.DateTimeField(editable=False, null=True, blank=True)
 
     # TODO: Should be many to many relation with roles
     raw_data = models.ForeignKey(
@@ -102,3 +113,12 @@ class Job(models.Model):
 
     class Meta:
         verbose_name = "Job"
+
+    def save(self, *args, **kwargs):
+        now = datetime.datetime.utcnow()
+        status = JobStatus(self.status)
+        if status.is_started:
+            self.started_on = now
+        elif status.is_finished:
+            self.finished_on = now
+        super().save(*args, **kwargs)

@@ -43,7 +43,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ["id", "status", "created_on", "viewer_url"]
+        fields = ["id", "status", "created_on", "started_on", "finished_on", "viewer_url"]
 
 
 class BatchJob(serializers.Serializer):

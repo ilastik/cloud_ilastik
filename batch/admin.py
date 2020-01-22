@@ -11,7 +11,7 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(models.Job)
 class JobAdmin(admin.ModelAdmin):
     list_display = ["id", "owner", "status", "project", "external_id", "created_on", "updated_on"]
-    readonly_fields = ["owner", "project", "external_id", "created_on", "updated_on"]
-    list_filter = ["status", "created_on"]
+    readonly_fields = ["owner", "project", "external_id", "created_on", "updated_on", "started_on", "finished_on"]
+    list_filter = ["status", "created_on", "started_on", "finished_on"]
     search_fields = ["id", "owner__username"]
     ordering = ["-created_on"]
