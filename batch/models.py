@@ -82,13 +82,33 @@ class JobStatus(enum.Enum):
     def choices(cls):
         return [(key.value, key.name) for key in cls]
 
-    @property
-    def is_started(self):
-        return self == self.running
 
-    @property
-    def is_finished(self):
-        return self == self.done or self == self.failed
+class JobManager(models.Manager):
+    _STATUS_TRANSITIONS = {
+        (JobStatus.created, JobStatus.running): {"now": "started_on"},
+        (JobStatus.running, JobStatus.done): {"now": "finished_on"},
+        (JobStatus.running, JobStatus.failed): {"now": "finished_on"},
+        (JobStatus.done, JobStatus.collected): {},
+    }
+
+    def update_status(self, *, old: JobStatus, new: JobStatus) -> int:
+        """Update the job status of records with the old status to the new status.
+
+        Returns:
+            Number of changed rows.
+
+        Raises:
+            ValueError: Status transition is invalid.
+        """
+        transition_info = self._STATUS_TRANSITIONS.get((old, new))
+        if transition_info is None:
+            raise ValueError(f"invalid job status transition from {old.value} to {new.value}")
+
+        extra_update_fields = {}
+        if "now" in transition_info:
+            extra_update_fields[transition_info["now"]] = datetime.datetime.utcnow()
+
+        return self.filter(status=old).update(status=new, **extra_update_fields)
 
 
 class Job(models.Model):
@@ -111,14 +131,7 @@ class Job(models.Model):
     )
     project = models.ForeignKey(Project, editable=False, null=True, blank=False, on_delete=models.PROTECT)
 
+    objects = JobManager()
+
     class Meta:
         verbose_name = "Job"
-
-    def save(self, *args, **kwargs):
-        now = datetime.datetime.utcnow()
-        status = JobStatus(self.status)
-        if status.is_started:
-            self.started_on = now
-        elif status.is_finished:
-            self.finished_on = now
-        super().save(*args, **kwargs)
