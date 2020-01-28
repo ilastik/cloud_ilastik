@@ -127,9 +127,13 @@ class JobDoneView(generics.UpdateAPIView):
         serializer = serializers.JobUpdate(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        job_fields = {"external_id": external_id}
+
         try:
             status = models.JobStatus(serializer.data["status"])
-            models.Job.objects.filter(external_id=external_id).update_status(old=models.JobStatus.running, new=status)
+            n_affected = models.Job.objects.filter(**job_fields).update_status(old=models.JobStatus.running, new=status)
+            if n_affected != 1:
+                raise ValueError
         except ValueError:
             return response.Response(status=400)
 
@@ -139,7 +143,7 @@ class JobDoneView(generics.UpdateAPIView):
                 "url": serializer.data["result_url"],
                 "dtype": serializer.data["dtype"],
                 **{k: v for k, v in serializer.data.items() if k.startswith("size_")},
-                "job": models.Job.objects.get(external_id=external_id),
+                "job": models.Job.objects.get(**job_fields),
             }
             datasets_models.Dataset(**dataset_params).save()
 
