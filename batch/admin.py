@@ -19,7 +19,7 @@ class JobAdmin(admin.ModelAdmin):
     ordering = ["-created_on"]
 
     @mark_safe
-    def raw_data_link(self, obj: models.Job):
+    def raw_data_link(self, obj: models.Job) -> str:
         raw_data = obj.raw_data
         if not raw_data:
             return ""
@@ -30,7 +30,7 @@ class JobAdmin(admin.ModelAdmin):
     raw_data_link.short_description = "Raw Data"
 
     @mark_safe
-    def project_link(self, obj: models.Job):
+    def project_link(self, obj: models.Job) -> str:
         project = obj.project
         if not project:
             return ""
