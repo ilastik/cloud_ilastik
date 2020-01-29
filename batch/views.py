@@ -53,11 +53,17 @@ class ProjectNewJobView(ProjectDetailView):
         project = self.get_object()
 
         try:
-            dataset = self._compatible_datasets.get(pk=int(self.request.POST["dataset"]))
-        except (KeyError, ValueError, datasets_models.Dataset.DoesNotExist):
+            prefix = "dataset-"
+            # Is it an error if there are no datasets, or some datasets in the request are not in the compatible set?
+            datasets = self._compatible_datasets.filter(
+                id__in=(int(k[len(prefix):]) for k in self.request.POST if k.startswith(prefix))
+            )
+        except (KeyError, ValueError):
             return HttpResponse(status=400)
 
-        models.Job.objects.create(project=project, owner=self.request.user, raw_data=dataset)
+        models.Job.objects.bulk_create(
+            models.Job(project=project, owner=self.request.user, raw_data=dataset) for dataset in datasets
+        )
         return HttpResponseRedirect(urls.reverse("batch:project-detail", args=[project.pk]))
 
     @property
