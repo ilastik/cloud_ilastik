@@ -142,22 +142,24 @@ class HpcEnvironment:
 
 
 class IlastikJobSpec(JobSpec):
+    _RAW_DATA_FILE_NAME = "raw_data.n5.tar"
     def __init__(
         self,
         *,
         hpc_environment: Optional[HpcEnvironment] = None,
-        ilp_project: Path,
         raw_data_url: str,
-        result_endpoint: str,
         Resources: JobResources,
-        block_size: int = 1024,
-        export_dtype: str = "uint8",
-        pipeline_result_drange: Tuple[Number, Number] = (0.1, 1.0),
-        export_drange: Tuple[Number, Number] = (0, 255),
+        ILASTIK_PROJECT_FILE: Path,
+        ILASTIK_JOB_RESULT_ENDPOINT: str,
+        ILASTIK_BLOCK_SIZE: int = 1024,
+
+        ILASTIK_EXPORT_DTYPE: str = "uint8",
+        ILASTIK_PIPELINE_RESULT_DRANGE: Tuple[Number, Number] = (0.1, 1.0),
+        ILASTIK_EXPORT_DRANGE: Tuple[Number, Number] = (0, 255),
     ):
         self.hpc_environment = hpc_environment or HpcEnvironment()
         self.inputs = [
-            ilp_project.as_posix(),
+            ILASTIK_PROJECT_FILE.as_posix(),
             Path(__file__).parent.joinpath("remote_scripts/run_ilastik.sh").as_posix(),
             Path(__file__).parent.joinpath("remote_scripts/update_status.py").as_posix(),
             Path(__file__).parent.joinpath("remote_scripts/upload_dir.py").as_posix(),
@@ -165,18 +167,23 @@ class IlastikJobSpec(JobSpec):
         super().__init__(
             Executable="./run_ilastik.sh",
             Environment={  # These variables are expected bu the run_ilastik.sh script
-                "ILASTIK_PROJECT_FILE": ilp_project.name,
+                "ILASTIK_RAW_DATA": self._RAW_DATA_FILE_NAME,
+
+                "ILASTIK_PROJECT_FILE": ILASTIK_PROJECT_FILE.name,
+                "ILASTIK_JOB_RESULT_ENDPOINT": ILASTIK_JOB_RESULT_ENDPOINT,
+                "ILASTIK_BLOCK_SIZE": ILASTIK_BLOCK_SIZE,
+
+                "ILASTIK_EXPORT_DTYPE": ILASTIK_EXPORT_DTYPE,
+                "ILASTIK_PIPELINE_RESULT_DRANGE": str(ILASTIK_PIPELINE_RESULT_DRANGE),
+                "ILASTIK_EXPORT_DRANGE": str(ILASTIK_EXPORT_DRANGE),
+
                 "HPC_PYTHON_EXECUTABLE": self.hpc_environment.HPC_PYTHON_EXECUTABLE,
                 "HPC_ILASTIK_PATH": self.hpc_environment.HPC_ILASTIK_PATH,
-                "ILASTIK_BLOCK_SIZE": block_size,
+
                 "S3_KEY": self.hpc_environment.S3_KEY,
                 "S3_SECRET": self.hpc_environment.S3_SECRET,
-                "ILASTIK_JOB_RESULT_ENDPOINT": result_endpoint,
-                "ILASTIK_EXPORT_DTYPE": export_dtype,
-                "ILASTIK_EXPORT_DRANGE": str(export_drange),
-                "ILASTIK_PIPELINE_RESULT_DRANGE": str(pipeline_result_drange),
             },
-            Imports=[JobImport(From=raw_data_url, To="raw_data.n5.tar")],  # FIXME: allow for non-n5
+            Imports=[JobImport(From=raw_data_url, To=self._RAW_DATA_FILE_NAME)],  # FIXME: allow for non-n5
             Resources=Resources,
             Tags=["ILASTIK"]
         )
@@ -189,3 +196,9 @@ class IlastikJobSpec(JobSpec):
     def run(self):
         site = self.hpc_environment._get_site()
         return site.new_job(job_description=self.to_dict(), inputs=self.inputs)
+
+class PixelClassificationJobSpec(IlastikJobSpec):
+    def __init__(self, **job_spec_kwargs):
+        super().__init__(**job_spec_kwargs)
+        
+
