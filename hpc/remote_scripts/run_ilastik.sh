@@ -21,10 +21,24 @@ HPC_ILASTIK_PATH="${HPC_ILASTIK_PATH}"
 S3_BUCKET_NAME="${S3_BUCKET_NAME:-n5test}"
 S3_KEY="${S3_KEY}" #used by upload_dir.py to upload results over to swift/s3
 S3_SECRET="${S3_SECRET}" #used by upload_dir.py to upload results over to swift/s3
+
+
+USE_MPIRUN="${USE_MPIRUN:-false}"
 # ----- end script params -----
 
+if $USE_MPIRUN; then
+    srun(){
+        if [ "$1" == "--ntasks" ]; then
+            shift;
+            mpirun -N "$@"
+        else
+            mpirun -N 8 "$@"
+        fi
+    }
+fi
+
 export HDF5_USE_FILE_LOCKING=FALSE #allow multiple ilastiks to open the same .ilp file concurrently
-export PYTHONPATH=/users/bp000188/source/ndstructs/
+export PYTHONPATH="${ILASTIK_PYTHONPATH:-/users/bp000188/source/ndstructs/}"
 
 if echo "$ILASTIK_RAW_DATA" | grep -E '\.n5\.tar(\.|$)' ;  then
     EXTRACTION_DIR="$(mktemp -u | rev | cut -d/ -f1 | rev)"
