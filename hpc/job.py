@@ -12,6 +12,8 @@ import enum
 from dataclasses import dataclass
 from collections.abc import Mapping, Iterable
 
+from hpc.openstack_environment import OpenstackEnvironment
+
 def dict_to_json_data(dictionary, strip_nones=True):
     out_dict = {}
     for k, v in dictionary.items():
@@ -33,7 +35,6 @@ def to_json_data(value, strip_nones=True):
     if isinstance(value, Iterable):
         return [to_json_data(v) for v in value]
     raise ValueError("Don't know how to convert {value} to json data")
-
 
 @dataclass
 class JobResources:
@@ -80,22 +81,14 @@ class HpcEnvironment:
         HBP_REFRESH_TOKEN: Optional[str] = None,
         HBP_APP_ID: Optional[str] = None,
         HBP_APP_SECRET: Optional[str] = None,
-        HPC_PYTHON_EXECUTABLE: Optional[str] = None,
-        HPC_ILASTIK_PATH: Optional[str] = None,
-        S3_KEY: Optional[str] = None,
-        S3_SECRET: Optional[str] = None,
+        HPC_PATH_PREFIX: Optional[str] = None,
         access_token: Optional[str] = None,
     ):
         self.access_token = access_token
         self.HBP_REFRESH_TOKEN = HBP_REFRESH_TOKEN or os.environ["HBP_REFRESH_TOKEN"]
         self.HBP_APP_ID = HBP_APP_ID or os.environ["HBP_APP_ID"]
         self.HBP_APP_SECRET = HBP_APP_SECRET or os.environ["HBP_APP_SECRET"]
-
-        self.HPC_PYTHON_EXECUTABLE = HPC_PYTHON_EXECUTABLE or os.environ["HPC_PYTHON_EXECUTABLE"]
-        self.HPC_ILASTIK_PATH = HPC_ILASTIK_PATH or os.environ["HPC_ILASTIK_PATH"]
-
-        self.S3_KEY = S3_KEY or os.environ["S3_KEY"]
-        self.S3_SECRET = S3_SECRET or os.environ["S3_SECRET"]
+        self.HPC_PATH_PREFIX = HPC_PATH_PREFIX or os.environ.get("HPC_PATH_PREFIX", "")
 
     def token_is_valid(self):
         if self.access_token is None:
@@ -140,43 +133,29 @@ class IlastikJobSpec(JobSpec):
     def __init__(
         self,
         *,
+        openstack_environment: OpenstackEnvironment,
         hpc_environment: Optional[HpcEnvironment] = None,
-        raw_data_url: str,
         Resources: JobResources,
+        ILASTIK_RAW_DATA: str,
         ILASTIK_PROJECT_FILE: Path,
         ILASTIK_JOB_RESULT_ENDPOINT: str,
         ILASTIK_EXPORT_SOURCE: str,
         ILASTIK_BLOCK_SIZE: int = 1024,
-
-        ILASTIK_EXPORT_DTYPE: str = "uint8",
-        ILASTIK_PIPELINE_RESULT_DRANGE: Tuple[Number, Number] = (0.1, 1.0),
-        ILASTIK_EXPORT_DRANGE: Tuple[Number, Number] = (0, 255),
     ):
-        raw_data_filename = Path(raw_data_url).name #FIXME: escape dangerous names?
         self.hpc_environment = hpc_environment or HpcEnvironment()
         self.inputs = [ILASTIK_PROJECT_FILE.as_posix()]
         self.inputs += [p.as_posix() for p in Path(__file__).parent.glob("remote_scripts/*")]
         super().__init__(
             Executable="./run_ilastik.sh",
             Environment={  # These variables are expected bu the run_ilastik.sh script
-                "ILASTIK_RAW_DATA": raw_data_filename,
-
+                "ILASTIK_RAW_DATA": ILASTIK_RAW_DATA,
                 "ILASTIK_PROJECT_FILE": ILASTIK_PROJECT_FILE.name,
                 "ILASTIK_JOB_RESULT_ENDPOINT": ILASTIK_JOB_RESULT_ENDPOINT,
                 "ILASTIK_EXPORT_SOURCE": ILASTIK_EXPORT_SOURCE,
                 "ILASTIK_BLOCK_SIZE": ILASTIK_BLOCK_SIZE,
-
-                "ILASTIK_EXPORT_DTYPE": ILASTIK_EXPORT_DTYPE,
-                "ILASTIK_PIPELINE_RESULT_DRANGE": str(ILASTIK_PIPELINE_RESULT_DRANGE),
-                "ILASTIK_EXPORT_DRANGE": str(ILASTIK_EXPORT_DRANGE),
-
-                "HPC_PYTHON_EXECUTABLE": self.hpc_environment.HPC_PYTHON_EXECUTABLE,
-                "HPC_ILASTIK_PATH": self.hpc_environment.HPC_ILASTIK_PATH,
-
-                "S3_KEY": self.hpc_environment.S3_KEY,
-                "S3_SECRET": self.hpc_environment.S3_SECRET,
+                "HPC_PATH_PREFIX": self.hpc_environment.HPC_PATH_PREFIX,
+                **to_json_data(openstack_environment)
             },
-            Imports=[JobImport(From=raw_data_url, To=raw_data_filename)],
             Resources=Resources,
             Tags=["ILASTIK"]
         )
@@ -194,7 +173,12 @@ class PixelClassificationJobSpec(IlastikJobSpec):
     class ExportSource(enum.Enum):
         PROBABILITIES = "Probabilities"
 
-    def __init__(self, ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES, **job_spec_kwargs):
+    def __init__(
+        self,
+        *,
+        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES,
+        **job_spec_kwargs
+    ):
         super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
 
 
@@ -205,14 +189,12 @@ class ObjectClassificationJobSpec(IlastikJobSpec):
 
     def __init__(
         self,
-        *
-        prediction_maps_url: str,
+        *,
+        ILASTIK_PREDICTION_MAPS: str,
         ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.OBJECT_PREDICTIONS,
         **job_spec_kwargs
     ):
         super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
-        predictions_maps_filename = Path(prediction_maps_url).name #FIXME: escape dangerous names?
         self.Executable = "./run_obj_classification.sh"
-        self.Environment["ILASTIK_PREDICTION_MAPS"] = predictions_maps_filename
-        self.Imports.apppend(JobImport(From=prediction_maps_url, To=predictions_maps_filename))
+        self.Environment["ILASTIK_PREDICTION_MAPS"] = ILASTIK_PREDICTION_MAPS
 

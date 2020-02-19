@@ -40,12 +40,14 @@ class HPC:
             S3_SECRET=settings.S3_SECRET,
             access_token=access_token,
         )
+        self._os_env = hpc.CscsOpenstackEnvironment()
 
     def run(self, project_path: Path, data_url: str) -> str:
-        jobspec = hpc.IlastikJobSpec(
+        jobspec = hpc.PixelClassificationJobSpec(
+            openstack_environment=self._os_env,
             hpc_environment=self._env,
             ILASTIK_PROJECT_FILE=project_path,
-            raw_data_url=data_url,
+            ILASTIK_RAW_DATA=data_url,
             ILASTIK_JOB_RESULT_ENDPOINT=settings.HPC_JOB_RESULT_ENDPOINT,
             Resources=hpc.JobResources(CPUs=10, Memory="32G", Runtime=_30_MINUTES),
         )
