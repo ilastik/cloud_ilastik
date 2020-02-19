@@ -13,7 +13,7 @@ ILASTIK_EXPORT_SOURCE="${ILASTIK_EXPORT_SOURCE}"
 ILASTIK_BLOCK_SIZE="${ILASTIK_BLOCK_SIZE:-1024}"
 ILASTIK_EXTRA_OPTIONS="${ILASTIK_EXTRA_OPTIONS:-}"
 
-S3_BUCKET_NAME="${S3_BUCKET_NAME:-n5test}"
+OUTPUT_BUCKET_NAME="${OUTPUT_BUCKET_NAME:-n5test}"
 # ----- end script params -----
 
 
@@ -32,8 +32,8 @@ srun ilastik.py \
     --raw_data "${ILASTIK_RAW_DATA}" \
     ${ILASTIK_EXTRA_OPTIONS}
 
-srun --ntasks 1 swift upload "$S3_BUCKET_NAME" "$OUT_FILE_NAME"
+srun --ntasks 1 swift upload "$OUTPUT_BUCKET_NAME" "$OUT_FILE_NAME"
 
 srun --ntasks 1 python -u "$SCRIPTS_DIR/update_status.py" \
   "${ILASTIK_JOB_RESULT_ENDPOINT}" "${JOB_ID}" \
-  --output "${OUT_FILE_NAME}" --bucket "${S3_BUCKET_NAME}"
+  --output "${OUT_FILE_NAME}" --bucket "${OUTPUT_BUCKET_NAME}"
