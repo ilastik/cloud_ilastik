@@ -15,7 +15,7 @@ download_datasource(){
 
     srun --ntasks 1 swift --quiet download -p "$PREFIX" -D $OUTPUT_DIR "$BUCKET_NAME"
     if echo "$PREFIX" | grep -Eq '\.n5$' ; then
-        find_n5_dataset $OUTPUT_DIR
+        find_n5_dataset "$OUTPUT_DIR"
     else
         echo "$OUTPUT_DIR/$PREFIX"
     fi
@@ -23,7 +23,7 @@ download_datasource(){
 
 find_n5_dataset(){
     N5_DIR_PATH="$1"
-    echo "$(find "$N5_DIR_PATH" | grep -E '\.n5/[^/]+/attributes.json' | head -n1 | sed 's@/attributes.json@@')"
+    find "$N5_DIR_PATH" | grep -E '\.n5/[^/]+/attributes.json' | head -n1 | sed 's@/attributes.json@@'
 }
 
 random_filename(){
