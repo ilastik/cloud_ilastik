@@ -34,6 +34,6 @@ srun ilastik.py \
 
 srun --ntasks 1 swift upload "$S3_BUCKET_NAME" "$OUT_FILE_NAME"
 
-srun --ntasks 1 "${HPC_PYTHON_EXECUTABLE}" -u "$SCRIPTS_DIR/update_status.py" \
+srun --ntasks 1 python -u "$SCRIPTS_DIR/update_status.py" \
   "${ILASTIK_JOB_RESULT_ENDPOINT}" "${JOB_ID}" \
   --output "${OUT_FILE_NAME}" --bucket "${S3_BUCKET_NAME}"
