@@ -9,7 +9,6 @@ import requests
 from numbers import Number
 from urllib.parse import urljoin
 import enum
-from dataclasses import dataclass
 from collections.abc import Mapping, Iterable
 
 from hpc.openstack_environment import OpenstackEnvironment
@@ -36,29 +35,49 @@ def to_json_data(value, strip_nones=True):
         return [to_json_data(v) for v in value]
     raise ValueError("Don't know how to convert {value} to json data")
 
-@dataclass
+_FIVE_MINUTES = 5 * 50
 class JobResources:
-    Memory: Optional[str] = None
-    Runtime: int = 60 * 5  # seconds
-    CPUs: Optional[int] = None
-    Nodes: Optional[int] = None
-    CPUsPerNode: Optional[int] = None
-    Reservation: Optional[str] = None
+    def __init__(
+        self,
+        *,
+        Memory: Optional[str] = None,
+        Runtime: int = _FIVE_MINUTES,
+        CPUs: Optional[int] = None,
+        Nodes: Optional[int] = None,
+        CPUsPerNode: Optional[int] = None,
+        Reservation: Optional[str] = None
+    ):
+        self.Memory = Memory
+        self.Runtime = Runtime
+        self.CPUs = CPUs
+        self.Nodes = Nodes
+        self.CPUsPerNode = CPUsPerNode
+        self.Reservation = Reservation
 
-@dataclass
 class JobImport:
-    From: str
-    To: str
+    def __init_(self, *, From: str, To: str):
+        self.From = From
+        self.To = To
 
-@dataclass
 class JobSpec:
-    Executable: str
-    Arguments: Optional[List[str]] = None
-    Environment: Dict[str, str] = None
-    Exports: Optional[List[str]] = None
-    Resources: Optional[JobResources] = None
-    Imports: Optional[JobImport] = None
-    Tags: Optional[List[str]] = None
+    def __init__(
+        self,
+        *,
+        Executable: str,
+        Arguments: Optional[List[str]] = None,
+        Environment: Dict[str, str] = None,
+        Exports: Optional[List[str]] = None,
+        Resources: Optional[JobResources] = None,
+        Imports: Optional[JobImport] = None,
+        Tags: Optional[List[str]] = None
+    ):
+        self.Executable = Executable
+        self.Arguments = Arguments
+        self.Environment = Environment
+        self.Exports = Exports
+        self.Resources = Resources
+        self.Imports = Imports
+        self.Tags = Tags
 
     def raw(self):
         return to_json_data({
