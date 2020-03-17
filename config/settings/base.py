@@ -307,10 +307,10 @@ HPC_JOB_RESULT_ENDPOINT = "https://web.ilastik.org/v1/batch/jobs/external"
 HBP_REFRESH_TOKEN = env("HBP_REFRESH_TOKEN", default=None)
 HBP_APP_ID = env("HBP_APP_ID", default=None)
 HBP_APP_SECRET = env("HBP_APP_SECRET", default=None)
-HPC_PYTHON_EXECUTABLE = env("HBP_PYTHON_EXECUTABLE", default=None)
-HPC_ILASTIK_PATH = env("HBP_ILASTIK_PATH", default=None)
+HPC_PATH_PREFIX = env("HPC_PATH_PREFIX", default=None)
 
-S3_KEY = env("S3_KEY", default=None)
-S3_SECRET = env("S3_SECRET", default=None)
+#these are required to issue a swift token. For CSCS, they are the same used for logging in via ssh
+OS_USERNAME = env("OS_USERNAME", default=None)
+OS_PASSWORD = env("OS_PASSWORD", default=None)
 
 JOB_RUNNER = "batch.job_runner.HPC"

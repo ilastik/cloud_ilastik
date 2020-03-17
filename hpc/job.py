@@ -8,43 +8,56 @@ import jwt
 import requests
 from numbers import Number
 from urllib.parse import urljoin
+import enum
+from collections.abc import Mapping, Iterable
 
+from hpc.openstack_environment import OpenstackEnvironment
 
+def dict_to_json_data(dictionary, strip_nones=True):
+    out_dict = {}
+    for k, v in dictionary.items():
+        json_value = to_json_data(v, strip_nones=strip_nones)
+        if strip_nones and json_value is None:
+            continue
+        out_dict[k] = json_value
+    return out_dict
+
+def to_json_data(value, strip_nones=True):
+    if isinstance(value, (str, int, float, type(None))):
+        return value
+    if hasattr(value, 'to_json_data'):
+        return value.to_json_data()
+    if hasattr(value, '__dict__'):
+        return dict_to_json_data(value.__dict__, strip_nones=strip_nones)
+    if isinstance(value, Mapping):
+        return dict_to_json_data(value, strip_nones=strip_nones)
+    if isinstance(value, Iterable):
+        return [to_json_data(v) for v in value]
+    raise ValueError("Don't know how to convert {value} to json data")
+
+_FIVE_MINUTES = 5 * 50
 class JobResources:
     def __init__(
         self,
         *,
         Memory: Optional[str] = None,
-        Runtime: int = 60 * 5,  # seconds
+        Runtime: int = _FIVE_MINUTES,
         CPUs: Optional[int] = None,
         Nodes: Optional[int] = None,
         CPUsPerNode: Optional[int] = None,
-        Reservation: Optional[str] = None,
+        Reservation: Optional[str] = None
     ):
-        self.data = {"Runtime": Runtime}
-        if Memory:
-            self.data["Memory"] = Memory
-        if CPUs:
-            self.data["CPUs"] = CPUs
-        if Nodes:
-            self.data["Nodes"] = Nodes
-        if CPUsPerNode:
-            self.data["CPUsPerNode"] = CPUsPerNode
-        if Reservation:
-            self.data["Reservation"] = Reservation
-
-    def to_dict(self):
-        return self.data.copy()
-
+        self.Memory = Memory
+        self.Runtime = Runtime
+        self.CPUs = CPUs
+        self.Nodes = Nodes
+        self.CPUsPerNode = CPUsPerNode
+        self.Reservation = Reservation
 
 class JobImport:
-    def __init__(self, From: str, To: str):
+    def __init_(self, *, From: str, To: str):
         self.From = From
         self.To = To
-
-    def to_dict(self) -> Dict:
-        return self.__dict__.copy()
-
 
 class JobSpec:
     def __init__(
@@ -58,22 +71,24 @@ class JobSpec:
         Imports: Optional[JobImport] = None,
         Tags: Optional[List[str]] = None
     ):
-        self.data = {"Executable": Executable, "Resources": (Resources or JobResources()).to_dict()}
-        if Arguments:
-            self.data["Arguments"] = Arguments
-        if Environment:
-            self.data["Environment"] = Environment
-        if Exports:
-            self.data["Exports"] = Exports
-        if Resources:
-            self.data["Resources"] = Resources.to_dict()
-        if Imports:
-            self.data["Imports"] = [imp.to_dict() for imp in Imports]
-        if Tags:
-            self.data["Tags"] = Tags
+        self.Executable = Executable
+        self.Arguments = Arguments
+        self.Environment = Environment
+        self.Exports = Exports
+        self.Resources = Resources
+        self.Imports = Imports
+        self.Tags = Tags
 
-    def to_dict(self):
-        return self.data.copy()
+    def raw(self):
+        return to_json_data({
+            "Executable": self.Executable,
+            "Arguments": self.Arguments,
+            "Environment": self.Environment,
+            "Exports": self.Exports,
+            "Resources": self.Resources,
+            "Imports": self.Imports,
+            "Tags": self.Tags
+        })
 
 
 class HpcEnvironment:
@@ -85,22 +100,14 @@ class HpcEnvironment:
         HBP_REFRESH_TOKEN: Optional[str] = None,
         HBP_APP_ID: Optional[str] = None,
         HBP_APP_SECRET: Optional[str] = None,
-        HPC_PYTHON_EXECUTABLE: Optional[str] = None,
-        HPC_ILASTIK_PATH: Optional[str] = None,
-        S3_KEY: Optional[str] = None,
-        S3_SECRET: Optional[str] = None,
+        HPC_PATH_PREFIX: Optional[str] = None,
         access_token: Optional[str] = None,
     ):
         self.access_token = access_token
         self.HBP_REFRESH_TOKEN = HBP_REFRESH_TOKEN or os.environ["HBP_REFRESH_TOKEN"]
         self.HBP_APP_ID = HBP_APP_ID or os.environ["HBP_APP_ID"]
         self.HBP_APP_SECRET = HBP_APP_SECRET or os.environ["HBP_APP_SECRET"]
-
-        self.HPC_PYTHON_EXECUTABLE = HPC_PYTHON_EXECUTABLE or os.environ["HPC_PYTHON_EXECUTABLE"]
-        self.HPC_ILASTIK_PATH = HPC_ILASTIK_PATH or os.environ["HPC_ILASTIK_PATH"]
-
-        self.S3_KEY = S3_KEY or os.environ["S3_KEY"]
-        self.S3_SECRET = S3_SECRET or os.environ["S3_SECRET"]
+        self.HPC_PATH_PREFIX = HPC_PATH_PREFIX or os.environ.get("HPC_PATH_PREFIX", "")
 
     def token_is_valid(self):
         if self.access_token is None:
@@ -145,47 +152,68 @@ class IlastikJobSpec(JobSpec):
     def __init__(
         self,
         *,
+        openstack_environment: OpenstackEnvironment,
         hpc_environment: Optional[HpcEnvironment] = None,
-        ilp_project: Path,
-        raw_data_url: str,
-        result_endpoint: str,
         Resources: JobResources,
-        block_size: int = 1024,
-        export_dtype: str = "uint8",
-        pipeline_result_drange: Tuple[Number, Number] = (0.1, 1.0),
-        export_drange: Tuple[Number, Number] = (0, 255),
+        ILASTIK_RAW_DATA: str,
+        ILASTIK_PROJECT_FILE: Path,
+        ILASTIK_JOB_RESULT_ENDPOINT: str,
+        ILASTIK_EXPORT_SOURCE: str,
+        ILASTIK_BLOCK_SIZE: int = 1024,
     ):
         self.hpc_environment = hpc_environment or HpcEnvironment()
-        self.inputs = [
-            ilp_project.as_posix(),
-            Path(__file__).parent.joinpath("remote_scripts/run_ilastik.sh").as_posix(),
-            Path(__file__).parent.joinpath("remote_scripts/update_status.py").as_posix(),
-            Path(__file__).parent.joinpath("remote_scripts/upload_dir.py").as_posix(),
-        ]
+        self.inputs = [ILASTIK_PROJECT_FILE.as_posix()]
+        self.inputs += [p.as_posix() for p in Path(__file__).parent.glob("remote_scripts/*")]
         super().__init__(
             Executable="./run_ilastik.sh",
             Environment={  # These variables are expected bu the run_ilastik.sh script
-                "ILASTIK_PROJECT_FILE": ilp_project.name,
-                "HPC_PYTHON_EXECUTABLE": self.hpc_environment.HPC_PYTHON_EXECUTABLE,
-                "HPC_ILASTIK_PATH": self.hpc_environment.HPC_ILASTIK_PATH,
-                "ILASTIK_BLOCK_SIZE": block_size,
-                "S3_KEY": self.hpc_environment.S3_KEY,
-                "S3_SECRET": self.hpc_environment.S3_SECRET,
-                "ILASTIK_JOB_RESULT_ENDPOINT": result_endpoint,
-                "ILASTIK_EXPORT_DTYPE": export_dtype,
-                "ILASTIK_EXPORT_DRANGE": str(export_drange),
-                "ILASTIK_PIPELINE_RESULT_DRANGE": str(pipeline_result_drange),
+                "ILASTIK_RAW_DATA": ILASTIK_RAW_DATA,
+                "ILASTIK_PROJECT_FILE": ILASTIK_PROJECT_FILE.name,
+                "ILASTIK_JOB_RESULT_ENDPOINT": ILASTIK_JOB_RESULT_ENDPOINT,
+                "ILASTIK_EXPORT_SOURCE": ILASTIK_EXPORT_SOURCE,
+                "ILASTIK_BLOCK_SIZE": ILASTIK_BLOCK_SIZE,
+                "HPC_PATH_PREFIX": self.hpc_environment.HPC_PATH_PREFIX,
+                **to_json_data(openstack_environment)
             },
-            Imports=[JobImport(From=raw_data_url, To="raw_data.n5.tar")],  # FIXME: allow for non-n5
             Resources=Resources,
             Tags=["ILASTIK"]
         )
 
     def __repr__(self) -> str:
-        data = self.to_dict()
+        data = self.raw()
         data["inputs"] = self.inputs
         return json.dumps(data, indent=4)
 
     def run(self):
         site = self.hpc_environment._get_site()
-        return site.new_job(job_description=self.to_dict(), inputs=self.inputs)
+        return site.new_job(job_description=self.raw(), inputs=self.inputs)
+
+class PixelClassificationJobSpec(IlastikJobSpec):
+    class ExportSource(enum.Enum):
+        PROBABILITIES = "Probabilities"
+
+    def __init__(
+        self,
+        *,
+        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES,
+        **job_spec_kwargs
+    ):
+        super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
+
+
+class ObjectClassificationJobSpec(IlastikJobSpec):
+    _PREDICTION_MAPS_FILE_NAME = ""
+    class ExportSource(enum.Enum):
+        OBJECT_PREDICTIONS = "Object Predictions"
+
+    def __init__(
+        self,
+        *,
+        ILASTIK_PREDICTION_MAPS: str,
+        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.OBJECT_PREDICTIONS,
+        **job_spec_kwargs
+    ):
+        super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
+        self.Executable = "./run_obj_classification.sh"
+        self.Environment["ILASTIK_PREDICTION_MAPS"] = ILASTIK_PREDICTION_MAPS
+
