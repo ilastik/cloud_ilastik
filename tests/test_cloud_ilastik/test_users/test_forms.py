@@ -1,7 +1,7 @@
 import pytest
 
 from cloud_ilastik.users.forms import UserCreationForm
-from cloud_ilastik.users.tests.factories import UserFactory
+from cloud_ilastik.users.test.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
