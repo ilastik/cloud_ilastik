@@ -1,7 +1,7 @@
 import pytest
 
 
-from batch.tests import factories
+from batch.test import factories
 from batch import tasks, models
 
 
