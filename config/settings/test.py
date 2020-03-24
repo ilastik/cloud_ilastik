@@ -31,7 +31,9 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [  # noqa F405
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-JOB_RUNNER = "batch.tests.job_runner.DummyJobRunner"
+JOB_RUNNER = "batch.test.job_runner.DummyJobRunner"
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True

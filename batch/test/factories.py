@@ -1,6 +1,6 @@
 from batch import models
-from cloud_ilastik.datasets.tests import factories as datasets_factories
-from files.tests import factories as files_factories
+from cloud_ilastik.datasets.test import factories as datasets_factories
+from files.test import factories as files_factories
 import factory
 
 
