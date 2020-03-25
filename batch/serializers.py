@@ -73,6 +73,7 @@ class JobUpdate(serializers.Serializer):
     result_url = serializers.URLField()
     name = serializers.CharField()
     dtype = serializers.ChoiceField(choices=datasets_models.DType.values())
+    channel_type = serializers.ChoiceField(choices=datasets_models.ChannelType.values(), default=datasets_models.ChannelType.Intensity.value, required=False)
     size_t = serializers.IntegerField(default=1)
     size_z = serializers.IntegerField(default=1)
     size_y = serializers.IntegerField()

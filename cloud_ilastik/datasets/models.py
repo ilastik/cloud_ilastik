@@ -11,21 +11,33 @@ from . import neuroglancer as ng
 TAR_URL_RE = re.compile("/data$")
 
 
-class DType(str, enum.Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return name
+@enum.unique
+class DType(enum.Enum):
+    uint8 = "uint8"
+    uint16 = "uint16"
+    uint32 = "uint32"
+    uint64 = "uint64"
+    int8 = "int8"
+    int16 = "int16"
+    int32 = "int32"
+    int64 = "int64"
+    float16 = "float16"
+    float32 = "float32"
+    float64 = "float64"
 
-    uint8 = enum.auto()
-    uint16 = enum.auto()
-    uint32 = enum.auto()
-    uint64 = enum.auto()
-    int8 = enum.auto()
-    int16 = enum.auto()
-    int32 = enum.auto()
-    int64 = enum.auto()
-    float16 = enum.auto()
-    float32 = enum.auto()
-    float64 = enum.auto()
+    @classmethod
+    def choices(cls):
+        return tuple((item.name, item.value) for item in cls)
+
+    @classmethod
+    def values(cls):
+        return tuple(item.value for item in cls)
+
+
+@enum.unique
+class ChannelType(enum.Enum):
+    Intensity = "intensity"
+    IndexedColor = "indexed"
 
     @classmethod
     def choices(cls):
@@ -40,6 +52,7 @@ class Dataset(models.Model):
     name = models.CharField(max_length=255)
     url = models.URLField()
     dtype = models.CharField(max_length=15, choices=DType.choices())
+    channel_type = models.CharField(max_length=15, choices=ChannelType.choices(), default=ChannelType.Intensity.value)
     size_t = models.PositiveIntegerField(default=1)
     size_z = models.PositiveIntegerField(default=1)
     size_y = models.PositiveIntegerField()
@@ -56,6 +69,7 @@ class Dataset(models.Model):
         if not self.owner and self.job:
             self.owner = self.job.owner
         super().save(*args, **kwargs)
+
 
     @property
     def sizes(self):

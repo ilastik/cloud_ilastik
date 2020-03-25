@@ -145,6 +145,7 @@ class JobDoneView(generics.UpdateAPIView):
                 "name": serializer.data["name"],
                 "url": serializer.data["result_url"],
                 "dtype": serializer.data["dtype"],
+                "channel_type": serializer.data["channel_type"],
                 **{k: v for k, v in serializer.data.items() if k.startswith("size_")},
                 "job": job,
             }

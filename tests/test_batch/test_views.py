@@ -66,6 +66,18 @@ class TestUpdateStatus:
         assert dataset.size_x == valid_payload["size_x"]
         assert dataset.size_y == valid_payload["size_y"]
         assert dataset.url == valid_payload["result_url"]
+        assert dataset.channel_type == "intensity"
+
+    def test_posting_with_indexed_channel_type(self, api_client: test.APIClient, valid_payload):
+        job = factories.JobFactory(external_id=uuid.uuid4().hex)
+        assert not job.results.exists()
+
+        url = reverse("job-done", kwargs={"external_id": job.external_id})
+        api_client.put(url, {**valid_payload, "channel_type": "indexed"}, format="json")
+
+        assert job.results.exists() == 1
+        dataset = job.results.first()
+        assert dataset.channel_type == "indexed"
 
 
 class TestProjectList:
