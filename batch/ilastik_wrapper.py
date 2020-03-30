@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import time
+from pathlib import Path
 from urllib.parse import urljoin
 
 import requests
@@ -31,52 +32,72 @@ def main():
     os.environ["PYTHONPATH"] = os.path.expanduser("~/source/ndstructs")
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    with open("config.json") as f:
-        config = json.load(f)
+    job_id = Path.cwd().name
+    config = json.loads(Path("config.json").read_text())
     log.info("config %s", config)
 
-    job_id = os.path.basename(os.getcwd())
+    inputs = download_inputs(config["inputs"])
+    output_path = run_ilastik(inputs=inputs, params=config["ilastik"], node_count=config["node_count"])
+    run(["swift", "--quiet", "upload", "--object-name", job_id, config["output_bucket"], str(output_path)])
+    report_result(config=config, output_path=output_path, job_id=job_id)
 
-    input_prefix = "/".join([config["input_path"], config.get("input_group", "")]).strip("/")
-    run(["swift", "--quiet", "download", "--prefix", input_prefix, "--output-dir", "input", config["input_bucket"]])
 
-    os.makedirs("output", mode=0o755, exist_ok=True)
-    output_name = re.sub(r"\W", "-", config["ilastik"]["export_source"], flags=re.ASCII).lower() + ".n5"
-    output_path = os.path.join("output", output_name)
+def download_inputs(inputs):
+    res = {}
 
-    ilastik_args = ["ilastik.py", "--headless", "--distributed"]
-    ilastik_args += ["--raw_data", os.path.join("input", config["input_path"])]
-    ilastik_args += ["--output_filename_format", output_path]
-    for k, v in sorted(config["ilastik"].items()):
+    for k, v in sorted(inputs.items()):
+        bucket = v["bucket"]
+        path = v["path"]
+        group = v.get("group", "")
+
+        prefix = f"{path}/{group}".strip("/")
+        output_dir = Path("input", bucket)
+        run(["swift", "--quiet", "download", "--prefix", prefix, "--output-dir", str(output_dir), bucket])
+
+        res[k] = output_dir.joinpath(*path.split("/"))
+
+    return res
+
+
+def run_ilastik(*, inputs, params, node_count):
+    os.makedirs("output", mode=0o755)
+
+    output_name = re.sub(r"\W", "-", params["export_source"], flags=re.ASCII).lower() + ".n5"
+    output_path = Path("output", output_name)
+
+    ilastik_args = ["ilastik.py", "--headless", "--distributed", "--output_filename_format", str(output_path)]
+    for k, v in sorted(inputs.items()) + sorted(params.items()):
         ilastik_args += [f"--{k}", str(v)]
-    run(ilastik_args, nodes=config["node_count"])
 
-    run(["swift", "--quiet", "upload", "--object-name", job_id, config["output_bucket"], output_path])
+    run(ilastik_args, nodes=node_count)
 
-    with open(os.path.join(output_path, "exported_data", "attributes.json")) as f:
-        output_attrs = json.load(f)
+    return output_path
 
+
+def report_result(*, config, output_path, job_id):
     result_url = urljoin(
-        os.environ["OS_STORAGE_URL"] + "/", "/".join([config["output_bucket"], job_id, output_name, "exported_data"]),
+        os.environ["OS_STORAGE_URL"] + "/", f"{config['output_bucket']}/{job_id}/{output_path.name}/exported_data"
     )
+    output_attrs = json.loads((output_path / "exported_data/attributes.json").read_text())
 
-    report_url = urljoin(config["report_url_prefix"] + "/", job_id + "/")
-    report_payload = {
+    url = urljoin(config["report_url_prefix"] + "/", job_id + "/")
+    payload = {
         "status": "done",
         "result_url": result_url,
-        "name": output_name,
+        "name": output_path.name,
         "dtype": output_attrs["dataType"],
         **{f"size_{k}": v for k, v in zip(output_attrs["axes"], output_attrs["dimensions"])},
     }
 
-    log.info("report_url %r", report_url)
-    log.info("report_payload %s", report_payload)
-    report_response = requests.put(report_url, json=report_payload)
-    report_response.raise_for_status()
+    log.info("report url %r", url)
+    log.info("report payload %s", payload)
+    response = requests.put(url, json=payload)
+    response.raise_for_status()
 
 
 def run(args, *, nodes=1):
-    slurm_args = ["srun", "--constraint", "mc", "--nodes", str(nodes), *args]
+    # slurm_args = ["srun", "--constraint", "mc", "--nodes", str(nodes), *args]
+    slurm_args = ["srun", "--constraint", "mc", "--nodes", "1", *args]
     log.info("run %s", slurm_args)
     subprocess.run(slurm_args, check=True)
 

@@ -307,7 +307,6 @@ HPC_JOB_RESULT_ENDPOINT = "https://web.ilastik.org/v1/batch/jobs/external"
 HBP_APP_ID = env("HBP_APP_ID", default=None)
 HBP_APP_SECRET = env("HBP_APP_SECRET", default=None)
 HBP_REFRESH_TOKEN = env("HBP_REFRESH_TOKEN", default=None)
-
 HBP_SITE = "DAINT-CSCS"
 HBP_REFRESH_URL = "https://services.humanbrainproject.eu/oidc/"  # Trailing slash is important!
 HBP_REFRESH_LEEWAY = -(15 * 60)  # 15 minutes.
@@ -319,7 +318,6 @@ HBP_TAGS = ["ILASTIK"]
 OS_PROJECT_ID = env("OS_PROJECT_ID", default=None)
 OS_USERNAME = env("OS_USERNAME", default=None)
 OS_PASSWORD = env("OS_PASSWORD", default=None)
-
 OS_STORAGE_URL = f"https://object.cscs.ch/v1/AUTH_{OS_PROJECT_ID}"
 OS_SAML_PASSWORD_AUTH_PARAMS = {
     "auth_url": "https://pollux.cscs.ch:13000/v3",

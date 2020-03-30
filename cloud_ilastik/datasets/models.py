@@ -1,14 +1,10 @@
 import enum
-import re
 
 from django.db import models
 
 import batch.models as batch_models
 import files.models as files_models
-
 from . import neuroglancer as ng
-
-TAR_URL_RE = re.compile("/data$")
 
 
 class DType(str, enum.Enum):
@@ -60,10 +56,6 @@ class Dataset(models.Model):
     @property
     def sizes(self):
         return {"t": self.size_t, "z": self.size_z, "y": self.size_y, "x": self.size_x, "c": self.size_c}
-
-    @property
-    def tar_url(self):
-        return TAR_URL_RE.sub(".tar", self.url)
 
     def as_viewer_layer(self):
         if self.size_c == 1:

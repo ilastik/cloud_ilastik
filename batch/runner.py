@@ -1,10 +1,11 @@
 import abc
+import contextlib
 import json
 import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Union
+from typing import Union, Mapping
 from urllib.parse import urljoin
 
 import jwt
@@ -19,7 +20,7 @@ from batch import models
 
 class JobRunner(abc.ABC):
     @abc.abstractmethod
-    def submit(self, *, project_path: Union[str, bytes, os.PathLike], data_url: str) -> str:
+    def submit(self, *, project_path: Union[str, bytes, os.PathLike], data_urls: Mapping[str, str]) -> str:
         pass
 
     @abc.abstractmethod
@@ -42,16 +43,18 @@ class UnicoreJobRunner(JobRunner):
         "FAILED": models.JobStatus.failed,
     }
 
-    def __init__(self):
-        refresh_config = {
-            "client_id": settings.HBP_APP_ID,
-            "client_secret": settings.HBP_APP_SECRET,
-            "refresh_token": settings.HBP_REFRESH_TOKEN,
-            "url": settings.HBP_REFRESH_URL,
-        }
-        transport = pyunicore.client.Transport(
-            None, refresh_handler=_LeewayRefreshHandler(refresh_config, leeway=settings.HBP_REFRESH_LEEWAY)
+    def __init__(self, *, auth_token=None):
+        refresh_handler = _LeewayRefreshHandler(
+            {
+                "client_id": settings.HBP_APP_ID,
+                "client_secret": settings.HBP_APP_SECRET,
+                "refresh_token": settings.HBP_REFRESH_TOKEN,
+                "url": settings.HBP_REFRESH_URL,
+            },
+            token=auth_token,
+            leeway=settings.HBP_REFRESH_LEEWAY,
         )
+        transport = pyunicore.client.Transport(auth_token, refresh_handler=refresh_handler)
         sites = pyunicore.client.get_sites(transport)
         self._client = pyunicore.client.Client(transport, sites[settings.HBP_SITE])
 
@@ -66,24 +69,11 @@ class UnicoreJobRunner(JobRunner):
         )
         self._openstack_auth_token = session.Session(auth=scoped_auth).get_token()
 
-    def submit(self, *, project_path: Union[str, bytes, os.PathLike], data_url: str) -> str:
-        match = re.search(r"AUTH_[^/]+/(?P<bucket>[^/]+)/(?P<prefix>.+)", data_url)
-        if not match:
-            raise ValueError(f"cannot submit job with invalid data_url {data_url!r}")
-
-        input_path = match["prefix"].strip("/").split("/")
-        input_group = []
-        while input_path and "." not in input_path[-1]:
-            input_group.append(input_path.pop())
-        input_path = "/".join(input_path)
-        input_group = "/".join(reversed(input_group))
-
+    def submit(self, *, project_path: Union[str, bytes, os.PathLike], data_urls: Mapping[str, str]) -> str:
         config = {
-            "input_bucket": match["bucket"],
-            "input_path": input_path,
-            "input_group": input_group,
+            "inputs": {k: _parse_data_url(url) for k, url in data_urls.items()},
             "ilastik": {
-                "project": str(Path(project_path).name),
+                "project": Path(project_path).name,
                 "export_source": "Probabilities",
                 **settings.ILASTIK_OPTIONS,
             },
@@ -92,25 +82,16 @@ class UnicoreJobRunner(JobRunner):
             "report_url_prefix": settings.HPC_JOB_RESULT_ENDPOINT,
         }
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            script_path = Path(__file__).parent / "ilastik_wrapper.py"
-            config_path = Path(temp_dir) / "config.json"
+        script_path = Path(__file__).parent / "ilastik_wrapper.py"
+        job_description = {
+            "Executable": script_path.name,
+            "Environment": {"OS_STORAGE_URL": settings.OS_STORAGE_URL, "OS_AUTH_TOKEN": self._openstack_auth_token},
+            "Tags": settings.HBP_TAGS,
+        }
 
-            with open(config_path, "w") as f:
-                json.dump(config, f, indent=2, sort_keys=True)
-
-            job = self._client.new_job(
-                {
-                    "Executable": script_path.name,
-                    "Environment": {
-                        "OS_STORAGE_URL": settings.OS_STORAGE_URL,
-                        "OS_AUTH_TOKEN": self._openstack_auth_token,
-                    },
-                    "Tags": settings.HBP_TAGS,
-                },
-                inputs=list(map(str, [script_path, config_path, project_path])),
-            )
-
+        with _temp_json(config, "config.json", indent=4) as config_path:
+            inputs = list(map(str, [script_path, config_path, project_path]))
+            job = self._client.new_job(job_description, inputs=inputs)
             return job.job_id
 
     def status(self, id: str) -> models.JobStatus:
@@ -119,7 +100,7 @@ class UnicoreJobRunner(JobRunner):
     def delete(self, id: str) -> None:
         self._job(id).delete()
 
-    def _job(self, id: str):
+    def _job(self, id):
         return pyunicore.client.Job(self._client.transport, urljoin(self._client.site_urls["jobs"] + "/", id))
 
 
@@ -146,3 +127,30 @@ class _LeewayRefreshHandler(pyunicore.client.RefreshHandler):
             return True
         except jwt.exceptions.ExpiredSignatureError:
             return False
+
+
+def _parse_data_url(data_url):
+    match = re.search(r"AUTH_[^/]+/(?P<bucket>[^/]+)/(?P<prefix>.+)", data_url)
+    if not match:
+        raise ValueError(f"cannot submit job with invalid data_url {data_url!r}")
+
+    path = match["prefix"].strip("/").split("/")
+    rev_group = []
+
+    while path and "." not in path[-1]:
+        rev_group.append(path.pop())
+
+    d = {"bucket": match["bucket"], "path": "/".join(path)}
+    if rev_group:
+        d["group"] = "/".join(reversed(rev_group))
+
+    return d
+
+
+@contextlib.contextmanager
+def _temp_json(obj, name, **json_kwargs):
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / name
+        with open(path, "w") as f:
+            json.dump(obj, f, **json_kwargs)
+        yield path
