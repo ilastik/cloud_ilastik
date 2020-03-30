@@ -3,7 +3,10 @@
 {% block title %}Project {{ object.name }}{% endblock %}
 
 {% block content %}
-  <h2>Project {{ object.name }}</h2>
+  <h2>
+    Project {{ object.name }}
+    <span class="badge badge-secondary">{{ object.workflow }}</span>
+  </h2>
 
   <ul class="nav nav-tabs nav-fill">
     {% for nav_item in nav_list %}

@@ -24,6 +24,9 @@ class ProjectManager(models.Manager):
         return super().get_queryset().select_related("file")
 
 
+PROJECT_WORKFLOWS = ("Pixel Classification", "Object Classification")
+
+
 class Project(models.Model):
     """
     User project
@@ -31,6 +34,7 @@ class Project(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.ForeignKey(file_models.File, on_delete=models.SET_NULL, null=True)
+    workflow = models.CharField(max_length=255, choices=((w, w) for w in PROJECT_WORKFLOWS))
     num_channels = models.PositiveIntegerField()
     min_block_size_z = models.IntegerField(default=0, validators=[not_negative])
     min_block_size_y = models.IntegerField(validators=[not_negative])
