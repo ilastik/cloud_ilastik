@@ -304,13 +304,30 @@ TRAINING_API_URL = "https://web.ilastik.org/training/api/"
 SWIFT_PREFIX = env("SWIFT_PREFIX", default="https://web.ilastik.org/ngdata/")
 HPC_JOB_RESULT_ENDPOINT = "https://web.ilastik.org/v1/batch/jobs/external"
 
-HBP_REFRESH_TOKEN = env("HBP_REFRESH_TOKEN", default=None)
 HBP_APP_ID = env("HBP_APP_ID", default=None)
 HBP_APP_SECRET = env("HBP_APP_SECRET", default=None)
-HPC_PATH_PREFIX = env("HPC_PATH_PREFIX", default=None)
+HBP_REFRESH_TOKEN = env("HBP_REFRESH_TOKEN", default=None)
 
-#these are required to issue a swift token. For CSCS, they are the same used for logging in via ssh
+HBP_SITE = "DAINT-CSCS"
+HBP_REFRESH_URL = "https://services.humanbrainproject.eu/oidc/"  # Trailing slash is important!
+HBP_REFRESH_LEEWAY = -(15 * 60)  # 15 minutes.
+HBP_NODE_COUNT = 8
+HBP_OUTPUT_BUCKET = "n5test"
+HBP_TAGS = ["ILASTIK"]
+
+# These are required to issue a swift token. For CSCS, they are the same used for logging in via ssh.
+OS_PROJECT_ID = env("OS_PROJECT_ID", default=None)
 OS_USERNAME = env("OS_USERNAME", default=None)
 OS_PASSWORD = env("OS_PASSWORD", default=None)
+
+OS_STORAGE_URL = f"https://object.cscs.ch/v1/AUTH_{OS_PROJECT_ID}"
+OS_SAML_PASSWORD_AUTH_PARAMS = {
+    "auth_url": "https://pollux.cscs.ch:13000/v3",
+    "identity_provider": "cscskc",
+    "protocol": "mapped",
+    "identity_provider_url": "https://auth.cscs.ch/auth/realms/cscs/protocol/saml/",
+}
+
+ILASTIK_OPTIONS = {"distributed_block_size": 1024}
 
 JOB_RUNNER = "batch.job_runner.HPC"
