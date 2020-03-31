@@ -319,7 +319,7 @@ OS_PROJECT_ID = env("OS_PROJECT_ID", default=None)
 OS_USERNAME = env("OS_USERNAME", default=None)
 OS_PASSWORD = env("OS_PASSWORD", default=None)
 OS_STORAGE_URL = f"https://object.cscs.ch/v1/AUTH_{OS_PROJECT_ID}"
-OS_SAML_PASSWORD_AUTH_PARAMS = {
+OS_AUTH_PARAMS = {
     "auth_url": "https://pollux.cscs.ch:13000/v3",
     "identity_provider": "cscskc",
     "protocol": "mapped",
@@ -328,4 +328,4 @@ OS_SAML_PASSWORD_AUTH_PARAMS = {
 
 ILASTIK_OPTIONS = {"distributed_block_size": 1024}
 
-JOB_RUNNER = "batch.job_runner.HPC"
+JOB_RUNNER = "batch.runner.UnicoreJobRunner"
