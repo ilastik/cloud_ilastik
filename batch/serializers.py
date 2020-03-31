@@ -17,7 +17,17 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ["id", "html_url", "detail_url", "name", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
+        fields = [
+            "id",
+            "html_url",
+            "detail_url",
+            "name",
+            "file",
+            "num_channels",
+            "min_block_size_z",
+            "min_block_size_y",
+            "min_block_size_x",
+        ]
 
 
 class ResultSerializer(serializers.ModelSerializer):

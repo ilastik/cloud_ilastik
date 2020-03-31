@@ -1,5 +1,6 @@
 import pytest
 import uuid
+from itertools import chain
 
 from django.urls import reverse
 from rest_framework import test, status
@@ -66,6 +67,7 @@ class TestUpdateStatus:
         assert dataset.size_y == valid_payload["size_y"]
         assert dataset.url == valid_payload["result_url"]
 
+
 class TestProjectList:
     def test_reverse_url(self):
         url = reverse("project-list")
@@ -82,10 +84,49 @@ class TestProjectList:
         resp = api_client.get(url, format="json")
         assert resp.status_code == status.HTTP_200_OK
 
-    def test_project_list(self, user, api_client):
+    def test_project_list_displays_user_projects(self, user, api_client):
         url = reverse("project-list")
         projects = factories.ProjectFactory.create_batch(5, file__owner=user)
         api_client.force_login(user)
         resp = api_client.get(url)
         data = resp.json()
         assert len(data) == 5
+        assert set(entry["id"] for entry in data) == set(str(p.id) for p in projects)
+
+    def test_project_list_displays_public_projects(self, user, api_client):
+        url = reverse("project-list")
+        user_projects = factories.ProjectFactory.create_batch(5, file__owner=user)
+        public_projects = factories.ProjectFactory.create_batch(3, file__owner=None, is_public=True)
+        api_client.force_login(user)
+        resp = api_client.get(url)
+        data = resp.json()
+        assert len(data) == 8
+        assert set(entry["id"] for entry in data) == set(str(p.id) for p in chain(user_projects, public_projects))
+
+
+class TestProjectDetail:
+    def test_reverse_url(self):
+        project = factories.ProjectFactory()
+        url = reverse("batch:project-detail", kwargs={"pk": project.id})
+        assert url == f"/batch/projects/{project.id}/jobs/"
+
+    def test_get_project_not_owned(self, user, client):
+        project = factories.ProjectFactory()
+        url = reverse("batch:project-detail", kwargs={"pk": project.id})
+        client.force_login(user)
+        resp = client.get(url)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_get_project_owned(self, user, client):
+        project = factories.ProjectFactory(file__owner=user)
+        url = reverse("batch:project-detail", kwargs={"pk": project.id})
+        client.force_login(user)
+        resp = client.get(url)
+        assert resp.status_code == status.HTTP_200_OK
+
+    def test_get_project_public(self, user, client):
+        project = factories.ProjectFactory(is_public=True)
+        url = reverse("batch:project-detail", kwargs={"pk": project.id})
+        client.force_login(user)
+        resp = client.get(url)
+        assert resp.status_code == status.HTTP_200_OK

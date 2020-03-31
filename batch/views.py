@@ -1,18 +1,19 @@
 from django import urls
 from django.contrib.auth import mixins
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from django.views import generic
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from rest_framework import viewsets, response, permissions, generics
 
 from . import serializers, models
 from cloud_ilastik.datasets import models as datasets_models
 
 
-class ProjectListView(mixins.LoginRequiredMixin, generic.ListView):
-    def get_queryset(self):
-        return models.Project.objects.filter(file__owner=self.request.user)
+@login_required()
+def project_list_page(request):
+    return render(request, "batch/project_list.html")
 
 
 class ProjectDetailView(mixins.LoginRequiredMixin, mixins.UserPassesTestMixin, generic.DetailView):
@@ -20,7 +21,7 @@ class ProjectDetailView(mixins.LoginRequiredMixin, mixins.UserPassesTestMixin, g
 
     def test_func(self):
         project = self.get_object()
-        return project.file and project.file.owner_id == self.request.user.id
+        return project.is_public or project.file and project.file.owner_id == self.request.user.id
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(nav_list=self._nav_list, **kwargs)
@@ -91,7 +92,7 @@ class ProjectViewset(viewsets.ViewSet):
         return response.Response(serializer.data)
 
     def list(self, request):
-        queryset = models.Project.objects.filter(file__owner=request.user)
+        queryset = models.Project.objects.filter(Q(file__owner=request.user) | Q(is_public=True))
         serializer = serializers.ProjectSerializer(queryset, many=True, context={"request": request})
         return response.Response(serializer.data)
 
