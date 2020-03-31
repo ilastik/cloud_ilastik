@@ -35,6 +35,7 @@ class Project(models.Model):
     min_block_size_z = models.IntegerField(default=0, validators=[not_negative])
     min_block_size_y = models.IntegerField(validators=[not_negative])
     min_block_size_x = models.IntegerField(validators=[not_negative])
+    is_public = models.BooleanField(default=False)
 
     objects = ProjectManager()
 

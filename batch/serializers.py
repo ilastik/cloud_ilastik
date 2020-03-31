@@ -12,10 +12,12 @@ __all__ = ["ProjectSerializer"]
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
     html_url = serializers.HyperlinkedIdentityField("batch:project-new-job")
+    detail_url = serializers.HyperlinkedIdentityField("batch:project-detail")
+    name = serializers.CharField(read_only=True)
 
     class Meta:
         model = models.Project
-        fields = ["id", "html_url", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
+        fields = ["id", "html_url", "detail_url", "name", "file", "num_channels", "min_block_size_z", "min_block_size_y", "min_block_size_x"]
 
 
 class ResultSerializer(serializers.ModelSerializer):

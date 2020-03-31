@@ -92,7 +92,7 @@ class ProjectViewset(viewsets.ViewSet):
 
     def list(self, request):
         queryset = models.Project.objects.filter(file__owner=request.user)
-        serializer = serializers.ProjectSerializer(queryset, many=True)
+        serializer = serializers.ProjectSerializer(queryset, many=True, context={"request": request})
         return response.Response(serializer.data)
 
 

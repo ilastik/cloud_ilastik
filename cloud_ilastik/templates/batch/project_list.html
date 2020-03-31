@@ -4,12 +4,73 @@
 
 {% block content %}
   <h2>Projects</h2>
-
-  <ul>
-  {% for project in object_list %}
-    <li>
-      <a href="{% url 'batch:project-detail' project.pk %}">{{ project.name }}</a>
-    </li>
-  {% endfor %}
+  <ul id="project-list" data-fetch-url="{% url "project-list" %}">
   </ul>
+
+  <script type="module">
+    import { Component, Fragment, h, render } from '{% static "js/preact/preact.module.js" %}';
+
+    class ProjectList extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {projects: []};
+      }
+
+      async update() {
+        const projects = await fetch(this.props.fetchUrl).then(r => r.json());
+        this.setState({...this.state, projects});
+      }
+
+      componentDidMount() {
+        this.update();
+        this.timer = setInterval(() => this.update(), this.props.refreshInterval);
+      }
+
+      componentWillUnmount() {
+        clearInterval(this.timer);
+      }
+
+      render() {
+        const children = this.state.projects.map((job, index) => ProjectItem({...job, index}));
+        return h(Fragment, null, ...children);
+      }
+    }
+
+    const ProjectItem = ({id, name, detail_url}) => {
+      return h(
+        'li', {key: id},
+        h('a', {href: detail_url}, name)
+      );
+    };
+
+    class JobList extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {jobs: []};
+      }
+
+      async update() {
+        const jobs = await fetch(this.props.fetchUrl).then(r => r.json());
+        this.setState({...this.state, jobs});
+      }
+
+      componentDidMount() {
+        this.update();
+        this.timer = setInterval(() => this.update(), this.props.refreshInterval);
+      }
+
+      componentWillUnmount() {
+        clearInterval(this.timer);
+      }
+
+      render() {
+        const children = this.state.jobs.map((job, index) => JobItem({...job, index}));
+        return h(Fragment, null, ...children);
+      }
+    }
+
+    const root = document.getElementById('project-list');
+    const app = h(ProjectList, {fetchUrl: root.dataset.fetchUrl, refreshInterval: 10000});
+    render(app, root);
+  </script>
 {% endblock %}
