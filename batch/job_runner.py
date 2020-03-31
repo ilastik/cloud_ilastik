@@ -37,10 +37,7 @@ class HPC:
             HPC_PATH_PREFIX=settings.HPC_PATH_PREFIX,
             access_token=access_token,
         )
-        self._os_env = hpc.CscsOpenstackEnvironment(
-            OS_USERNAME=settings.OS_USERNAME,
-            OS_PASSWORD=settings.OS_PASSWORD
-        )
+        self._os_env = hpc.CscsOpenstackEnvironment(OS_USERNAME=settings.OS_USERNAME, OS_PASSWORD=settings.OS_PASSWORD)
 
     def run(self, project_path: Path, data_url: str) -> str:
         jobspec = hpc.PixelClassificationJobSpec(
@@ -49,7 +46,7 @@ class HPC:
             ILASTIK_PROJECT_FILE=project_path,
             ILASTIK_RAW_DATA=data_url,
             ILASTIK_JOB_RESULT_ENDPOINT=settings.HPC_JOB_RESULT_ENDPOINT,
-            Resources=hpc.JobResources(CPUs=10, Memory="32G", Runtime=_30_MINUTES),
+            Resources=hpc.JobResources(CPUs=10, Memory="16G", Runtime=_30_MINUTES),
         )
         unicore_job = jobspec.run()
         return unicore_job.job_id
