@@ -17,4 +17,5 @@ python:
 install:
   - pip install -r requirements/local.txt
 script:
-  - "pytest"
+  - pytest
+  - git diff --name-only --diff-filter=AM master.. | grep ".*\.py" | xargs black --check
