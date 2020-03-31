@@ -3,7 +3,7 @@ from typing import Optional
 from rest_framework import serializers
 
 from . import models
-import cloud_ilastik.datasets.models as datasets_models
+from cloud_ilastik import datasets
 from cloud_ilastik.datasets import neuroglancer as ng
 
 
@@ -32,7 +32,7 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
 
 class ResultSerializer(serializers.ModelSerializer):
     class Meta:
-        model = datasets_models.Dataset
+        model = datasets.models.Dataset
         fields = ["neuroglancer_url"]
 
 
@@ -61,7 +61,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
 class BatchJob(serializers.Serializer):
     project = serializers.PrimaryKeyRelatedField(queryset=models.Project.objects.all(), allow_null=False)
     datasets = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=datasets_models.Dataset.objects.all(), allow_null=False
+        many=True, queryset=datasets.models.Dataset.objects.all(), allow_null=False
     )
 
     class Meta:
@@ -72,8 +72,10 @@ class JobUpdate(serializers.Serializer):
     status = serializers.ChoiceField(choices=[models.JobStatus.done.value, models.JobStatus.failed.value])
     result_url = serializers.URLField()
     name = serializers.CharField()
-    dtype = serializers.ChoiceField(choices=datasets_models.DType.values())
-    channel_type = serializers.ChoiceField(choices=datasets_models.ChannelType.values(), default=datasets_models.ChannelType.Intensity.value, required=False)
+    dtype = serializers.ChoiceField(choices=datasets.models.DType.values())
+    channel_type = serializers.ChoiceField(
+        choices=datasets.types.ChannelType.values(), default=datasets.types.ChannelType.Intensity.value, required=False
+    )
     size_t = serializers.IntegerField(default=1)
     size_z = serializers.IntegerField(default=1)
     size_y = serializers.IntegerField()

@@ -7,6 +7,7 @@ import batch.models as batch_models
 import files.models as files_models
 
 from . import neuroglancer as ng
+from . import types
 
 TAR_URL_RE = re.compile("/data$")
 
@@ -34,25 +35,13 @@ class DType(enum.Enum):
         return tuple(item.value for item in cls)
 
 
-@enum.unique
-class ChannelType(enum.Enum):
-    Intensity = "intensity"
-    IndexedColor = "indexed"
-
-    @classmethod
-    def choices(cls):
-        return tuple((item.name, item.value) for item in cls)
-
-    @classmethod
-    def values(cls):
-        return tuple(item.value for item in cls)
-
-
 class Dataset(models.Model):
     name = models.CharField(max_length=255)
     url = models.URLField()
     dtype = models.CharField(max_length=15, choices=DType.choices())
-    channel_type = models.CharField(max_length=15, choices=ChannelType.choices(), default=ChannelType.Intensity.value)
+    channel_type = models.CharField(
+        max_length=15, choices=types.ChannelType.choices(), default=types.ChannelType.Intensity.value
+    )
     size_t = models.PositiveIntegerField(default=1)
     size_z = models.PositiveIntegerField(default=1)
     size_y = models.PositiveIntegerField()
@@ -70,7 +59,6 @@ class Dataset(models.Model):
             self.owner = self.job.owner
         super().save(*args, **kwargs)
 
-
     @property
     def sizes(self):
         return {"t": self.size_t, "z": self.size_z, "y": self.size_y, "x": self.size_x, "c": self.size_c}
@@ -86,7 +74,7 @@ class Dataset(models.Model):
             mode = ng.ColorMode.RGB
         else:
             mode = ng.ColorMode.ILASTIK
-        return ng.Layer(self.url, self.size_c, color_mode=mode, role="data")
+        return ng.Layer(self.url, self.size_c, color_mode=mode, channel_type=self.channel_type, role="data")
 
     @property
     def neuroglancer_url(self):

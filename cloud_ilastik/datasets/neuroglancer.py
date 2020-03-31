@@ -6,14 +6,9 @@ from typing import List
 
 from django.conf import settings
 
+from . import types
+
 __all__ = ["viewer_url"]
-
-
-@enum.unique
-class ColorMode(enum.Enum):
-    ILASTIK = "ilastik"
-    RGB = "rgb"
-    GRAYSCALE = "grayscale"
 
 
 class Layer:
@@ -21,7 +16,8 @@ class Layer:
     num_channels: int
     role: str
     selected: bool
-    color_mode: ColorMode
+    color_table: types.ColorTable
+    channel_type: types.ChannelType
 
     def __init__(
         self,
@@ -29,13 +25,15 @@ class Layer:
         num_channels: int,
         role: str = "data",
         selected: bool = False,
-        color_mode: ColorMode = ColorMode.RGB,
+        color_table: types.ColorTable = types.ColorTable.RGB,
+        channel_type: types.ChannelType = types.ChannelType.Intensity,
     ):
         self.url = url
         self.num_channels = num_channels
         self.role = role
         self.selected = selected
-        self.color_mode = color_mode
+        self.color_table = color_table
+        self.channel_type = channel_type
 
 
 class _Color:
@@ -71,12 +69,12 @@ class _Color:
         return f"vec3({self.r}, {self.g}, {self.b})"
 
     @classmethod
-    def get_colors(cls, num_colors: int, mode: ColorMode) -> List["Color"]:
+    def get_colors(cls, num_colors: int, table: types.ColorTable) -> List["Color"]:
         color_table = {
-            ColorMode.GRAYSCALE: cls.COLORS_GRAYSCALE,
-            ColorMode.RGB: cls.COLORS_RGB,
-            ColorMode.ILASTIK: cls.COLORS_ILASTIK,
-        }[mode]
+            types.ColorTable.GRAYSCALE: cls.COLORS_GRAYSCALE,
+            types.ColorTable.RGB: cls.COLORS_RGB,
+            types.ColorTable.ILASTIK: cls.COLORS_ILASTIK,
+        }[table]
 
         return [cls(*rgb) for rgb in color_table[:num_colors]]
 
@@ -84,11 +82,11 @@ class _Color:
         return f"<Color ({self.r},{self.g},{self.b})>"
 
 
-def _create_fragment_shader(channel_colors: List[_Color]):
+def _create_intensity_fragment_shader(colors):
     color_lines: List[str] = []
     colors_to_mix: List[str] = []
 
-    for idx, color in enumerate(channel_colors):
+    for idx, color in enumerate(colors):
         color_line = f"vec3 color{idx} = ({color.as_normalized_vec3()} / 255.0) * toNormalized(getDataValue({idx}));"
         color_lines.append(color_line)
         colors_to_mix.append(f"color{idx}")
@@ -104,6 +102,30 @@ def _create_fragment_shader(channel_colors: List[_Color]):
     return "\n".join(shader_lines)
 
 
+def _create_indexed_color_fragment_shader(colors):
+    color_lines: List[str] = ["vec4(0.0, 0.0, 0.0, 0.0)"]
+
+    for color in colors:
+        color_lines.append(f"vec4({color.r / 255.0}, {color.g / 255.0}, {color.b / 255.0}, 1.0)")
+
+    return f"""vec4 COLOR_MASKS[{len(color_lines)}] = vec4[](
+    {",".join(color_lines)}
+);
+void main() {{
+  uint val = toRaw(getDataValue());
+  emitRGB(COLOR_MASKS[val]);
+}}"""
+
+
+def _create_fragment_shader(colors: List[_Color], channel_type: types.ChannelType):
+    if channel_type == types.ChannelType.Intensity:
+        return _create_intensity_fragment_shader(colors)
+    elif channel_type == types.ChannelType.IndexedColor:
+        return _create_indexed_color_fragment_shader(colors)
+    else:
+        raise Exception(f"Unknown channel type {channel_type}")
+
+
 def viewer_url(layers: List[Layer], show_control_panel=False) -> str:
     ng_url = "https://web.ilastik.org/viewer/#!"
     ng_layers = []
@@ -111,6 +133,7 @@ def viewer_url(layers: List[Layer], show_control_panel=False) -> str:
 
     for layer in layers:
         data_url = layer.url.replace(settings.SWIFT_PREFIX, "https://web.ilastik.org/data/")
+        colors = _Color.get_colors(layer.color_table)
         ng_layers.append(
             {
                 "type": "image",
@@ -118,7 +141,7 @@ def viewer_url(layers: List[Layer], show_control_panel=False) -> str:
                 "tab": "source",
                 "blend": "default",
                 "name": layer.role,
-                "shader": _create_fragment_shader(_Color.get_colors(layer.num_channels, layer.color_mode)),
+                "shader": _create_fragment_shader(colors, layer.channel_type),
             }
         )
 
