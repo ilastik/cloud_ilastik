@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Projects{% endblock %}
 
@@ -42,32 +43,6 @@
         h('a', {href: detail_url}, name)
       );
     };
-
-    class JobList extends Component {
-      constructor(props) {
-        super(props);
-        this.state = {jobs: []};
-      }
-
-      async update() {
-        const jobs = await fetch(this.props.fetchUrl).then(r => r.json());
-        this.setState({...this.state, jobs});
-      }
-
-      componentDidMount() {
-        this.update();
-        this.timer = setInterval(() => this.update(), this.props.refreshInterval);
-      }
-
-      componentWillUnmount() {
-        clearInterval(this.timer);
-      }
-
-      render() {
-        const children = this.state.jobs.map((job, index) => JobItem({...job, index}));
-        return h(Fragment, null, ...children);
-      }
-    }
 
     const root = document.getElementById('project-list');
     const app = h(ProjectList, {fetchUrl: root.dataset.fetchUrl, refreshInterval: 10000});
