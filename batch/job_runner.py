@@ -46,7 +46,7 @@ class HPC:
             ILASTIK_PROJECT_FILE=project_path,
             ILASTIK_RAW_DATA=data_url,
             ILASTIK_JOB_RESULT_ENDPOINT=settings.HPC_JOB_RESULT_ENDPOINT,
-            Resources=hpc.JobResources(CPUs=10, Memory="16G", Runtime=_30_MINUTES),
+            Resources=hpc.JobResources(CPUs=10, Runtime=_30_MINUTES),
         )
         unicore_job = jobspec.run()
         return unicore_job.job_id
