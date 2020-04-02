@@ -57,7 +57,7 @@ class ProjectNewJobView(ProjectDetailView):
             prefix = "dataset-"
             # Is it an error if there are no datasets, or some datasets in the request are not in the compatible set?
             datasets = self._compatible_datasets.filter(
-                id__in=(int(k[len(prefix):]) for k in self.request.POST if k.startswith(prefix))
+                id__in=(int(k[len(prefix) :]) for k in self.request.POST if k.startswith(prefix))
             )
         except (KeyError, ValueError):
             return HttpResponse(status=400)

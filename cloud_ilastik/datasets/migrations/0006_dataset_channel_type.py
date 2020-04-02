@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('datasets', '0005_auto_20200117_1549'),
+        ("datasets", "0005_auto_20200117_1549"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
-            name='channel_type',
-            field=models.CharField(choices=[('Intensity', 'intensity'), ('IndexedColor', 'indexed')], default='intensity', max_length=15),
+            model_name="dataset",
+            name="channel_type",
+            field=models.CharField(
+                choices=[("Intensity", "intensity"), ("IndexedColor", "indexed")], default="intensity", max_length=15
+            ),
         ),
     ]
