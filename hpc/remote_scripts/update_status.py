@@ -26,6 +26,12 @@ def parse_args():
         type=pathlib.Path,
     )
     ap.add_argument(
+        "--channel-type",
+        required=True,
+        help="A hint on the meaning of the channel and how it is to be displayed",
+        choices=["intensity", "indexed"],
+    )
+    ap.add_argument(
         "--bucket",
         required=True,
         metavar="NAME",
@@ -43,6 +49,7 @@ def main():
     data = {
         "status": "done",
         "result_url": f"https://object.cscs.ch/v1/{ACCOUNT}/{args.bucket}/{args.output.name}/exported_data",
+        "channel_type": args.channel_type,
         "name": args.output.name,
         "dtype": attrs["dataType"],
         **{f"size_{k}": v for k, v in zip(attrs["axes"], attrs["dimensions"])},
