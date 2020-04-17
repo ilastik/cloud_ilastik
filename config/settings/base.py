@@ -309,8 +309,9 @@ HBP_APP_ID = env("HBP_APP_ID", default=None)
 HBP_APP_SECRET = env("HBP_APP_SECRET", default=None)
 HPC_PATH_PREFIX = env("HPC_PATH_PREFIX", default=None)
 
-#these are required to issue a swift token. For CSCS, they are the same used for logging in via ssh
+# these are required to issue a swift token. For CSCS, they are the same used for logging in via ssh
 OS_USERNAME = env("OS_USERNAME", default=None)
 OS_PASSWORD = env("OS_PASSWORD", default=None)
 
 JOB_RUNNER = "batch.job_runner.HPC"
+JOB_MEMORY = env("HPC_JOB_MEMORY", default="64G")
