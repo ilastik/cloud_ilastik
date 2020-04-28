@@ -7,13 +7,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('datasets', '0005_auto_20200117_1549'),
+        ("datasets", "0005_auto_20200117_1549"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
-            name='doi',
-            field=models.CharField(blank=True, max_length=255, null=True, validators=[cloud_ilastik.datasets.models.validate_doi]),
+            model_name="dataset",
+            name="doi",
+            field=models.CharField(
+                blank=True, max_length=255, null=True, validators=[cloud_ilastik.datasets.models.validate_doi]
+            ),
         ),
     ]
