@@ -1,7 +1,9 @@
 import enum
 import re
 
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 import batch.models as batch_models
 import files.models as files_models
@@ -36,6 +38,12 @@ class DType(str, enum.Enum):
         return tuple(item.value for item in cls)
 
 
+def validate_doi(value):
+    # https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+    if not re.fullmatch(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+", value, re.IGNORECASE):
+        raise ValidationError(_("%(value)s is not a valid DOI"), params={"value": value})
+
+
 class Dataset(models.Model):
     name = models.CharField(max_length=255)
     url = models.URLField()
@@ -45,6 +53,7 @@ class Dataset(models.Model):
     size_y = models.PositiveIntegerField()
     size_x = models.PositiveIntegerField()
     size_c = models.PositiveIntegerField(default=1)
+    doi = models.CharField(max_length=255, null=True, blank=True, validators=[validate_doi])
     job = models.ForeignKey(
         batch_models.Job, on_delete=models.SET_NULL, null=True, blank=True, default=None, related_name="results"
     )
