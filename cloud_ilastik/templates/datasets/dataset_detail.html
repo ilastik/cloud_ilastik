@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load dataset_extras %}
 
 {% block title %}Dataset {{ object.name }}{% endblock %}
 
@@ -8,4 +9,13 @@
   <div class="embed-responsive embed-responsive-1by1">
     <iframe title="{{ object.name }}" src="{{ object.neuroglancer_url }}" class="embed-responsive-item"></iframe>
   </div>
+
+  {% if object.doi %}
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">DOI</h5>
+        <a href="{{ object.doi | doi_url }}">{{ object.doi }}</a>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
