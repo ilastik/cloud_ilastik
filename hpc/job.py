@@ -69,7 +69,8 @@ class JobSpec:
         Exports: Optional[List[str]] = None,
         Resources: Optional[JobResources] = None,
         Imports: Optional[JobImport] = None,
-        Tags: Optional[List[str]] = None
+        Tags: Optional[List[str]] = None,
+        Project: Optional[str] = None
     ):
         self.Executable = Executable
         self.Arguments = Arguments
@@ -78,17 +79,20 @@ class JobSpec:
         self.Resources = Resources
         self.Imports = Imports
         self.Tags = Tags
+        self.Project = Project
 
     def raw(self):
-        return to_json_data({
+        raw = {
             "Executable": self.Executable,
             "Arguments": self.Arguments,
             "Environment": self.Environment,
             "Exports": self.Exports,
             "Resources": self.Resources,
             "Imports": self.Imports,
-            "Tags": self.Tags
-        })
+            "Tags": self.Tags,
+            "Project": self.Project
+        }
+        return to_json_data(raw)
 
 
 class HpcEnvironment:
@@ -101,6 +105,7 @@ class HpcEnvironment:
         HBP_APP_ID: Optional[str] = None,
         HBP_APP_SECRET: Optional[str] = None,
         HPC_PATH_PREFIX: Optional[str] = None,
+        HPC_PROJECT_NAME: Optional[str] = None,
         access_token: Optional[str] = None,
     ):
         self.access_token = access_token
@@ -108,6 +113,7 @@ class HpcEnvironment:
         self.HBP_APP_ID = HBP_APP_ID or os.environ["HBP_APP_ID"]
         self.HBP_APP_SECRET = HBP_APP_SECRET or os.environ["HBP_APP_SECRET"]
         self.HPC_PATH_PREFIX = HPC_PATH_PREFIX or os.environ.get("HPC_PATH_PREFIX", "")
+        self.HPC_PROJECT_NAME = HPC_PROJECT_NAME or os.environ.get("HPC_PROJECT_NAME", None)
 
     def token_is_valid(self):
         if self.access_token is None:
@@ -176,7 +182,8 @@ class IlastikJobSpec(JobSpec):
                 **to_json_data(openstack_environment)
             },
             Resources=Resources,
-            Tags=["ILASTIK"]
+            Tags=["ILASTIK"],
+            Project=hpc_environment.HPC_PROJECT_NAME
         )
 
     def __repr__(self) -> str:
@@ -216,4 +223,3 @@ class ObjectClassificationJobSpec(IlastikJobSpec):
         super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
         self.Executable = "./run_obj_classification.sh"
         self.Environment["ILASTIK_PREDICTION_MAPS"] = ILASTIK_PREDICTION_MAPS
-
