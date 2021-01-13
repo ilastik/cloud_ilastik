@@ -12,6 +12,7 @@ import enum
 from collections.abc import Mapping, Iterable
 
 from hpc.openstack_environment import OpenstackEnvironment
+from cloud_ilastik.datasets.types import ChannelType
 
 def dict_to_json_data(dictionary, strip_nones=True):
     out_dict = {}
@@ -159,6 +160,7 @@ class IlastikJobSpec(JobSpec):
         ILASTIK_PROJECT_FILE: Path,
         ILASTIK_JOB_RESULT_ENDPOINT: str,
         ILASTIK_EXPORT_SOURCE: str,
+        ILASTIK_RESULT_CHANNEL_TYPE: ChannelType,
         ILASTIK_BLOCK_SIZE: int = 1024,
     ):
         self.hpc_environment = hpc_environment or HpcEnvironment()
@@ -171,6 +173,7 @@ class IlastikJobSpec(JobSpec):
                 "ILASTIK_PROJECT_FILE": ILASTIK_PROJECT_FILE.name,
                 "ILASTIK_JOB_RESULT_ENDPOINT": ILASTIK_JOB_RESULT_ENDPOINT,
                 "ILASTIK_EXPORT_SOURCE": ILASTIK_EXPORT_SOURCE,
+                "ILASTIK_RESULT_CHANNEL_TYPE": ILASTIK_RESULT_CHANNEL_TYPE.value,
                 "ILASTIK_BLOCK_SIZE": ILASTIK_BLOCK_SIZE,
                 "HPC_PATH_PREFIX": self.hpc_environment.HPC_PATH_PREFIX,
                 **to_json_data(openstack_environment)
@@ -188,32 +191,43 @@ class IlastikJobSpec(JobSpec):
         site = self.hpc_environment._get_site()
         return site.new_job(job_description=self.raw(), inputs=self.inputs)
 
+class WorkflowOutput:
+    def __init__(self, export_source: str, channel_type: ChannelType):
+        self.export_source = export_source
+        self.channel_type = channel_type
+
 class PixelClassificationJobSpec(IlastikJobSpec):
-    class ExportSource(enum.Enum):
-        PROBABILITIES = "Probabilities"
+    class OutputType(enum.Enum):
+        PROBABILITIES = WorkflowOutput(export_source="Probabilities", channel_type=ChannelType.Intensity)
 
     def __init__(
         self,
         *,
-        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES,
+        output_type: OutputType = OutputType.PROBABILITIES,
         **job_spec_kwargs
     ):
-        super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
+        super().__init__(
+            ILASTIK_EXPORT_SOURCE=output_type.value.export_source,
+            ILASTIK_RESULT_CHANNEL_TYPE=output_type.value.channel_type,
+            **job_spec_kwargs
+        )
 
 
 class ObjectClassificationJobSpec(IlastikJobSpec):
-    _PREDICTION_MAPS_FILE_NAME = ""
-    class ExportSource(enum.Enum):
-        OBJECT_PREDICTIONS = "Object Predictions"
+    class OutputType(enum.Enum):
+        OBJECT_PREDICTIONS = WorkflowOutput(export_source="Object Predictions", channel_type=ChannelType.IndexedColor)
 
     def __init__(
         self,
         *,
         ILASTIK_PREDICTION_MAPS: str,
-        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.OBJECT_PREDICTIONS,
+        output_type: OutputType = OutputType.OBJECT_PREDICTIONS,
         **job_spec_kwargs
     ):
-        super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
+        super().__init__(
+            ILASTIK_EXPORT_SOURCE=output_type.value.export_source,
+            ILASTIK_RESULT_CHANNEL_TYPE=output_type.value.channel_type,
+            **job_spec_kwargs)
         self.Executable = "./run_obj_classification.sh"
         self.Environment["ILASTIK_PREDICTION_MAPS"] = ILASTIK_PREDICTION_MAPS
 
