@@ -13,6 +13,7 @@ from collections.abc import Mapping, Iterable
 
 from hpc.openstack_environment import OpenstackEnvironment
 
+
 def dict_to_json_data(dictionary, strip_nones=True):
     out_dict = {}
     for k, v in dictionary.items():
@@ -22,12 +23,13 @@ def dict_to_json_data(dictionary, strip_nones=True):
         out_dict[k] = json_value
     return out_dict
 
+
 def to_json_data(value, strip_nones=True):
     if isinstance(value, (str, int, float, type(None))):
         return value
-    if hasattr(value, 'to_json_data'):
+    if hasattr(value, "to_json_data"):
         return value.to_json_data()
-    if hasattr(value, '__dict__'):
+    if hasattr(value, "__dict__"):
         return dict_to_json_data(value.__dict__, strip_nones=strip_nones)
     if isinstance(value, Mapping):
         return dict_to_json_data(value, strip_nones=strip_nones)
@@ -35,7 +37,10 @@ def to_json_data(value, strip_nones=True):
         return [to_json_data(v) for v in value]
     raise ValueError("Don't know how to convert {value} to json data")
 
+
 _FIVE_MINUTES = 5 * 50
+
+
 class JobResources:
     def __init__(
         self,
@@ -45,7 +50,7 @@ class JobResources:
         CPUs: Optional[int] = None,
         Nodes: Optional[int] = None,
         CPUsPerNode: Optional[int] = None,
-        Reservation: Optional[str] = None
+        Reservation: Optional[str] = None,
     ):
         self.Memory = Memory
         self.Runtime = Runtime
@@ -54,10 +59,12 @@ class JobResources:
         self.CPUsPerNode = CPUsPerNode
         self.Reservation = Reservation
 
+
 class JobImport:
     def __init_(self, *, From: str, To: str):
         self.From = From
         self.To = To
+
 
 class JobSpec:
     def __init__(
@@ -70,7 +77,7 @@ class JobSpec:
         Resources: Optional[JobResources] = None,
         Imports: Optional[JobImport] = None,
         Tags: Optional[List[str]] = None,
-        Project: Optional[str] = None
+        Project: Optional[str] = None,
     ):
         self.Executable = Executable
         self.Arguments = Arguments
@@ -90,7 +97,7 @@ class JobSpec:
             "Resources": self.Resources,
             "Imports": self.Imports,
             "Tags": self.Tags,
-            "Project": self.Project
+            "Project": self.Project,
         }
         return to_json_data(raw)
 
@@ -179,11 +186,11 @@ class IlastikJobSpec(JobSpec):
                 "ILASTIK_EXPORT_SOURCE": ILASTIK_EXPORT_SOURCE,
                 "ILASTIK_BLOCK_SIZE": ILASTIK_BLOCK_SIZE,
                 "HPC_PATH_PREFIX": self.hpc_environment.HPC_PATH_PREFIX,
-                **to_json_data(openstack_environment)
+                **to_json_data(openstack_environment),
             },
             Resources=Resources,
             Tags=["ILASTIK"],
-            Project=hpc_environment.HPC_PROJECT_NAME
+            Project=hpc_environment.HPC_PROJECT_NAME,
         )
 
     def __repr__(self) -> str:
@@ -195,21 +202,18 @@ class IlastikJobSpec(JobSpec):
         site = self.hpc_environment._get_site()
         return site.new_job(job_description=self.raw(), inputs=self.inputs)
 
+
 class PixelClassificationJobSpec(IlastikJobSpec):
     class ExportSource(enum.Enum):
         PROBABILITIES = "Probabilities"
 
-    def __init__(
-        self,
-        *,
-        ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES,
-        **job_spec_kwargs
-    ):
+    def __init__(self, *, ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.PROBABILITIES, **job_spec_kwargs):
         super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
 
 
 class ObjectClassificationJobSpec(IlastikJobSpec):
     _PREDICTION_MAPS_FILE_NAME = ""
+
     class ExportSource(enum.Enum):
         OBJECT_PREDICTIONS = "Object Predictions"
 
@@ -218,7 +222,7 @@ class ObjectClassificationJobSpec(IlastikJobSpec):
         *,
         ILASTIK_PREDICTION_MAPS: str,
         ILASTIK_EXPORT_SOURCE: ExportSource = ExportSource.OBJECT_PREDICTIONS,
-        **job_spec_kwargs
+        **job_spec_kwargs,
     ):
         super().__init__(ILASTIK_EXPORT_SOURCE=ILASTIK_EXPORT_SOURCE.value, **job_spec_kwargs)
         self.Executable = "./run_obj_classification.sh"
