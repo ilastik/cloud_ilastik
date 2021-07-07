@@ -30,6 +30,7 @@ srun ilastik.py \
     --export_source="${ILASTIK_EXPORT_SOURCE}" \
     --output_filename_format "$OUT_FILE_NAME" \
     --raw_data "${ILASTIK_RAW_DATA}" \
+    --ignore-training-axistags \
     ${ILASTIK_EXTRA_OPTIONS}
 
 srun --ntasks 1 swift upload "$OUTPUT_BUCKET_NAME" "$OUT_FILE_NAME"
