@@ -9,7 +9,7 @@ PyJWT==1.7.1
 celery==4.4.0  # pyup: < 5.0  # https://github.com/celery/celery
 django-celery-beat==1.5.0  # https://github.com/celery/django-celery-beat
 python-openstackclient==4.0.0
-lxml==4.6.2
+lxml==4.6.5
 
 # Django
 # ------------------------------------------------------------------------------
