@@ -5,7 +5,7 @@ argon2-cffi==19.2.0  # https://github.com/hynek/argon2_cffi
 whitenoise==5.0.1  # https://github.com/evansd/whitenoise
 redis==3.3.11  # https://github.com/antirez/redis
 pyunicore==0.5.7  # https://github.com/HumanBrainProject/pyunicore
-PyJWT==1.7.1
+PyJWT==2.4.0
 celery==4.4.0  # pyup: < 5.0  # https://github.com/celery/celery
 django-celery-beat==1.5.0  # https://github.com/celery/django-celery-beat
 python-openstackclient==4.0.0
